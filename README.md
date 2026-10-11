@@ -8,10 +8,13 @@ that generate GRBL-compliant G-code (`G0`/`G1` only).
 | [`hole-pattern`](plugins/hole-pattern) | Grid of round holes, spiralling down level by level |
 | [`rect-cutout`](plugins/rect-cutout) | Rectangular cut-out with adjustable corner radius and holding tabs |
 
+Website: <https://flandolt.github.io/gsender-plugins/> (source in [`site/`](site)).
+
 ## Layout
 
 ```
 plugins/<name>/     one gSender plugin each (own manifest, own build → ui/)
+site/               the GitHub Pages website (plain HTML, no build)
 packages/shared/    code used by several plugins (mock bridge, UI parts, 3D preview)
 ```
 

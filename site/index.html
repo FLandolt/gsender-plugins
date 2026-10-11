@@ -1,0 +1,243 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>gSender Plugins</title>
+<meta name="description" content="Free plugins for gSender that generate GRBL-safe G-code: hole patterns and rectangular cut-outs with tabs." />
+<style>
+:root {
+	--bg: #f6f7fb;
+	--surface: #ffffff;
+	--text: #0f172a;
+	--muted: #5b6478;
+	--line: #e3e6ef;
+	--accent: #2563eb;
+	--accent-2: #7c3aed;
+	--accent-ink: #ffffff;
+	--shadow: 0 1px 2px rgb(15 23 42 / 0.06), 0 12px 32px -12px rgb(15 23 42 / 0.18);
+	--art-bg: #eef2ff;
+	--art-stroke: #2563eb;
+}
+@media (prefers-color-scheme: dark) {
+	:root {
+		--bg: #0b1020;
+		--surface: #131a2e;
+		--text: #e8ecf8;
+		--muted: #94a0bb;
+		--line: #243051;
+		--accent: #5b8cff;
+		--accent-2: #a78bfa;
+		--accent-ink: #0b1020;
+		--shadow: 0 1px 2px rgb(0 0 0 / 0.4), 0 16px 40px -16px rgb(0 0 0 / 0.7);
+		--art-bg: #0f1730;
+		--art-stroke: #7ea2ff;
+	}
+}
+* { box-sizing: border-box; }
+html { scroll-behavior: smooth; }
+body {
+	margin: 0;
+	background: var(--bg);
+	color: var(--text);
+	font: 16px/1.6 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+	-webkit-font-smoothing: antialiased;
+}
+a { color: var(--accent); }
+.wrap { width: min(1080px, 100% - 32px); margin-inline: auto; }
+
+/* Hero */
+.hero {
+	position: relative;
+	overflow: hidden;
+	padding: 72px 0 56px;
+	background:
+		radial-gradient(900px 400px at 85% -10%, color-mix(in srgb, var(--accent-2) 28%, transparent), transparent 70%),
+		radial-gradient(700px 380px at 0% 0%, color-mix(in srgb, var(--accent) 26%, transparent), transparent 70%);
+}
+.hero::after {
+	content: "";
+	position: absolute; inset: 0;
+	background-image: radial-gradient(color-mix(in srgb, var(--text) 14%, transparent) 1px, transparent 1px);
+	background-size: 22px 22px;
+	mask-image: linear-gradient(to bottom, #000, transparent 85%);
+	pointer-events: none;
+}
+.hero .wrap { position: relative; z-index: 1; }
+.eyebrow {
+	display: inline-flex; align-items: center; gap: 8px;
+	padding: 4px 12px; border-radius: 999px;
+	border: 1px solid var(--line); background: var(--surface);
+	font-size: 13px; color: var(--muted);
+}
+.eyebrow b { color: var(--accent); }
+h1 { margin: 18px 0 12px; font-size: clamp(2.2rem, 5vw, 3.6rem); line-height: 1.08; letter-spacing: -0.02em; }
+h1 span { background: linear-gradient(90deg, var(--accent), var(--accent-2)); -webkit-background-clip: text; background-clip: text; color: transparent; }
+.lead { max-width: 640px; margin: 0 0 28px; font-size: 1.15rem; color: var(--muted); }
+.cta { display: flex; flex-wrap: wrap; gap: 12px; }
+.btn {
+	display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+	min-height: 46px; padding: 0 20px; border-radius: 12px;
+	font: inherit; font-weight: 600; text-decoration: none; cursor: pointer;
+	border: 1px solid var(--line); background: var(--surface); color: var(--text);
+	transition: transform .12s, box-shadow .12s, border-color .12s;
+}
+.btn:hover { transform: translateY(-1px); border-color: var(--accent); }
+.btn.primary { background: linear-gradient(135deg, var(--accent), var(--accent-2)); color: #fff; border-color: transparent; box-shadow: 0 8px 24px -8px color-mix(in srgb, var(--accent) 70%, transparent); }
+.btn[aria-disabled="true"] { opacity: .6; }
+
+/* Sections */
+section { padding: 56px 0; }
+h2 { margin: 0 0 8px; font-size: 1.7rem; letter-spacing: -0.01em; }
+.sub { margin: 0 0 28px; color: var(--muted); }
+
+/* Plugin cards */
+.grid { display: grid; gap: 20px; grid-template-columns: repeat(auto-fit, minmax(min(100%, 440px), 1fr)); }
+.card {
+	display: flex; flex-direction: column;
+	background: var(--surface); border: 1px solid var(--line);
+	border-radius: 20px; box-shadow: var(--shadow); overflow: hidden;
+}
+.art { aspect-ratio: 16 / 7; background: var(--art-bg); display: grid; place-items: center; border-bottom: 1px solid var(--line); }
+.art svg { width: 100%; height: 100%; }
+.body { padding: 22px 24px 24px; display: flex; flex-direction: column; gap: 14px; flex: 1; }
+.title { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
+.title h3 { margin: 0; font-size: 1.3rem; }
+.ver { font-size: 12px; padding: 2px 10px; border-radius: 999px; background: color-mix(in srgb, var(--accent) 14%, transparent); color: var(--accent); font-weight: 600; }
+.card p { margin: 0; color: var(--muted); }
+.feat { margin: 0; padding: 0; list-style: none; display: grid; gap: 8px; }
+.feat li { display: flex; gap: 10px; align-items: flex-start; font-size: 15px; }
+.feat li::before { content: ""; flex: none; width: 18px; height: 18px; margin-top: 3px; border-radius: 50%; background: color-mix(in srgb, var(--accent) 16%, transparent) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 18 18'%3E%3Cpath d='M5 9.5l2.5 2.5L13 6.5' fill='none' stroke='%232563eb' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E") center / 100% no-repeat; }
+.actions { margin-top: auto; padding-top: 6px; display: flex; flex-wrap: wrap; gap: 10px; }
+.meta { font-size: 13px; color: var(--muted); }
+
+/* Steps */
+.steps { display: grid; gap: 16px; grid-template-columns: repeat(auto-fit, minmax(min(100%, 240px), 1fr)); counter-reset: s; padding: 0; list-style: none; margin: 0; }
+.steps li { counter-increment: s; background: var(--surface); border: 1px solid var(--line); border-radius: 16px; padding: 20px; }
+.steps li::before { content: counter(s); display: grid; place-items: center; width: 32px; height: 32px; margin-bottom: 12px; border-radius: 10px; font-weight: 700; color: #fff; background: linear-gradient(135deg, var(--accent), var(--accent-2)); }
+.steps h4 { margin: 0 0 4px; }
+.steps p { margin: 0; color: var(--muted); font-size: 15px; }
+code { padding: 1px 6px; border-radius: 6px; background: color-mix(in srgb, var(--text) 8%, transparent); font: 0.9em ui-monospace, SFMono-Regular, Menlo, monospace; }
+
+footer { padding: 36px 0 56px; color: var(--muted); font-size: 14px; border-top: 1px solid var(--line); }
+footer .wrap { display: flex; flex-wrap: wrap; gap: 12px 24px; justify-content: space-between; }
+.safety { margin-top: 20px; padding: 14px 18px; border-radius: 14px; border: 1px solid color-mix(in srgb, #f59e0b 50%, var(--line)); background: color-mix(in srgb, #f59e0b 10%, var(--surface)); font-size: 15px; }
+</style>
+</head>
+<body>
+
+<header class="hero">
+	<div class="wrap">
+		<span class="eyebrow"><b>●</b> Free &amp; open source plugins for gSender</span>
+		<h1>Toolpaths, <span>without the CAM software.</span></h1>
+		<p class="lead">Small, focused gSender plugins that turn a few numbers into clean, GRBL-safe G-code — with a live 3D preview right inside gSender.</p>
+		<div class="cta">
+			<a class="btn primary" href="#plugins">Browse plugins</a>
+			<a class="btn" href="https://github.com/FLandolt/gsender-plugins">View on GitHub</a>
+		</div>
+	</div>
+</header>
+
+<main>
+	<section id="plugins">
+		<div class="wrap">
+			<h2>Plugins</h2>
+			<p class="sub">Each plugin is a single zip. Download the one you need.</p>
+			<div class="grid" id="grid"></div>
+			<div class="safety"><strong>Always check before you cut.</strong> Look at the toolpath preview, run the job in the air first, and keep a hand on the stop button. You use these plugins at your own risk.</div>
+		</div>
+	</section>
+
+	<section id="install">
+		<div class="wrap">
+			<h2>How to use a plugin</h2>
+			<p class="sub">Three steps, no accounts.</p>
+			<ol class="steps">
+				<li><h4>Download</h4><p>Grab the zip of the plugin you want from the cards above.</p></li>
+				<li><h4>Add it to gSender</h4><p>Unzip it into gSender's <code>plugins</code> folder so you get <code>plugins/&lt;name&gt;/gsender-plugin.json</code>, then restart gSender.</p></li>
+				<li><h4>Open and cut</h4><p>Open the plugin from gSender's tools page, enter your numbers, check the 3D preview and press <em>Load to gSender</em>.</p></li>
+			</ol>
+		</div>
+	</section>
+</main>
+
+<footer>
+	<div class="wrap">
+		<span>Built on the <a href="https://github.com/Sienci-Labs/gsender/blob/dev/packages/plugin-sdk/README.md">gSender Plugin SDK</a>. Not affiliated with Sienci Labs.</span>
+		<span><a href="https://github.com/FLandolt/gsender-plugins">Source</a> · <a href="https://github.com/FLandolt/gsender-plugins/issues">Report an issue</a></span>
+	</div>
+</footer>
+
+<script>
+const REPO = "FLandolt/gsender-plugins";
+
+const ART = {
+	holes: `<svg viewBox="0 0 320 140" role="img" aria-label="Grid of round holes">
+		${[0,1,2].map(r => [0,1,2,3].map(c => `<g><circle cx="${70 + c*60}" cy="${32 + r*38}" r="14" fill="none" stroke="var(--art-stroke)" stroke-width="2"/><circle cx="${70 + c*60}" cy="${32 + r*38}" r="6" fill="none" stroke="var(--art-stroke)" stroke-opacity=".45" stroke-width="1.5"/></g>`).join("")).join("")}
+		<circle cx="70" cy="32" r="3" fill="#ef4444"/></svg>`,
+	rect: `<svg viewBox="0 0 320 140" role="img" aria-label="Rounded rectangle with tabs">
+		<rect x="70" y="26" width="180" height="88" rx="22" fill="none" stroke="var(--art-stroke)" stroke-width="2.5"/>
+		<rect x="70" y="26" width="180" height="88" rx="22" fill="none" stroke="var(--art-stroke)" stroke-opacity=".35" stroke-width="9" transform="translate(0)" stroke-dasharray="0 1000"/>
+		${[[160,26,28,0],[160,114,28,0],[70,70,0,28],[250,70,0,28]].map(([x,y,w,h]) => w ? `<rect x="${x-w/2}" y="${y-3.5}" width="${w}" height="7" rx="2" fill="var(--bg)" stroke="var(--art-stroke)" stroke-width="1.5"/>` : `<rect x="${x-3.5}" y="${y-h/2}" width="7" height="${h}" rx="2" fill="var(--bg)" stroke="var(--art-stroke)" stroke-width="1.5"/>`).join("")}
+		<circle cx="160" cy="70" r="3" fill="#ef4444"/></svg>`
+};
+
+const PLUGINS = [
+	{
+		id: "hole-pattern",
+		name: "Hole Pattern",
+		art: "holes",
+		blurb: "Cut a single hole or a whole grid of them. Pick the tool, hole size and depth — the plugin spirals the bit down level by level.",
+		features: [
+			"Holes in X and Y — 1 × 1 is one hole, 1 × 2 adds a second along Y",
+			"Spirals down in the middle, then out to the wall, per stepdown",
+			"Feed &amp; speed presets for softwood, hardwood and gentle cuts",
+			"Zero at the first hole, in mm or inches"
+		]
+	},
+	{
+		id: "rect-cutout",
+		name: "Rectangular Cutout",
+		art: "rect",
+		blurb: "Cut a rectangular opening or part with sharp or rounded corners and holding tabs, ramping in so the bit never plunges.",
+		features: [
+			"Width, height and one corner radius — 0 for sharp corners",
+			"Opening or part, finished to the exact size you type",
+			"1–4 tabs per side with adjustable length and height",
+			"Climb or conventional, zero at centre or corner"
+		]
+	}
+];
+
+const esc = (s) => s.replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+
+const render = (releases) => {
+	document.getElementById("grid").innerHTML = PLUGINS.map(p => {
+		const rel = releases.find(r => r.tag_name.startsWith(p.id + "-v") && !r.draft);
+		const asset = rel && rel.assets.find(a => a.name.endsWith(".zip"));
+		const version = rel ? rel.tag_name.slice(p.id.length + 2) : null;
+		const dl = asset
+			? `<a class="btn primary" href="${esc(asset.browser_download_url)}">Download v${esc(version)}</a>`
+			: `<a class="btn primary" href="https://github.com/${REPO}/releases" aria-disabled="${rel ? "false" : "true"}">${rel ? "See releases" : "Releases"}</a>`;
+		const meta = rel ? `Updated ${new Date(rel.published_at).toLocaleDateString(undefined, { year: "numeric", month: "short", day: "numeric" })}` : "Release coming soon";
+		return `<article class="card">
+			<div class="art">${ART[p.art]}</div>
+			<div class="body">
+				<div class="title"><h3>${esc(p.name)}</h3>${version ? `<span class="ver">v${esc(version)}</span>` : ""}</div>
+				<p>${p.blurb}</p>
+				<ul class="feat">${p.features.map(f => `<li>${f}</li>`).join("")}</ul>
+				<div class="actions">${dl}<a class="btn" href="https://github.com/${REPO}/tree/main/plugins/${p.id}">Docs &amp; source</a></div>
+				<span class="meta">${meta}</span>
+			</div>
+		</article>`;
+	}).join("");
+};
+
+render([]);
+fetch(`https://api.github.com/repos/${REPO}/releases?per_page=50`)
+	.then(r => r.ok ? r.json() : Promise.reject(r.status))
+	.then(render)
+	.catch(() => { /* keep the static cards; links still point to the releases page */ });
+</script>
+</body>
+</html>
