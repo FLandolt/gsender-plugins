@@ -1,0 +1,32 @@
+{
+  "name": "hole-pattern",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "description": "gSender plugin that generates GRBL G-code for a grid of round holes",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "clean": "rm -rf ui",
+    "preview": "vite preview",
+    "check": "tsc --noEmit",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "@sienci/gsender-plugin-sdk": "^0.2.1",
+    "@sienci/gviewer": "^0.1.28",
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0",
+    "three": "^0.168.0"
+  },
+  "devDependencies": {
+    "@tailwindcss/vite": "^4.0.0",
+    "@types/react": "^19.0.0",
+    "@types/react-dom": "^19.0.0",
+    "@vitejs/plugin-react": "^4.3.4",
+    "tailwindcss": "^4.0.0",
+    "typescript": "^5.7.2",
+    "vite": "^6.0.0",
+    "vitest": "^2.1.8"
+  }
+}
