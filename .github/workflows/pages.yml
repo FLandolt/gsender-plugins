@@ -31,9 +31,9 @@ jobs:
       - name: Build live demos
         run: |
           for id in hole-pattern rect-cutout; do
-            npm run build --workspace "plugins/$id"
+            npm run build:demo --workspace "plugins/$id"
             mkdir -p "site/demos/$id"
-            cp -r "plugins/$id/ui/." "site/demos/$id/"
+            cp -r "plugins/$id/ui-demo/." "site/demos/$id/"
           done
       - uses: actions/configure-pages@v5
       - uses: actions/upload-pages-artifact@v3

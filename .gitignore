@@ -6,6 +6,7 @@ npm-debug.log*
 
 # Vite build output — build before shipping.
 ui/
+ui-demo/
 dist/
 dummy-non-existing-folder/
 site/demos/
