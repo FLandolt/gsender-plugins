@@ -54,7 +54,7 @@ export const defaultParams = (): Params => ({
 	mode: "hole",
 	direction: "climb",
 	origin: "center",
-	toolDiameter: 3.175,
+	toolDiameter: 4,
 	depth: 19,
 	feedrate: 1200,
 	plungeRate: 400,
@@ -81,7 +81,7 @@ export const check = (p: Params): Problems => {
 	if (p.cornerRadius > Math.min(p.width, p.height) / 2 + 1e-9)
 		errors.push("Corner radius is larger than half the shorter side.");
 	if (p.mode === "hole" && (p.width <= p.toolDiameter || p.height <= p.toolDiameter))
-		errors.push("The opening is not wider than the tool.");
+		errors.push("The inside cut is not wider than the tool.");
 
 	if (p.mode === "hole" && p.cornerRadius < rt - 1e-9)
 		warnings.push(

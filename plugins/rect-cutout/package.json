@@ -3,7 +3,7 @@
   "private": true,
   "version": "0.1.0",
   "type": "module",
-  "description": "gSender plugin that cuts a rectangular opening with adjustable corner radius and tabs",
+  "description": "gSender plugin that cuts a rectangle (inside or outside the line) with adjustable corner radius and tabs",
   "scripts": {
     "dev": "vite",
     "build": "vite build",

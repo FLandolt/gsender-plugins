@@ -95,7 +95,7 @@ const App = () => {
 						</div>
 					</Card>
 
-					<Card title="Material & speeds" hint={preset ? preset.hint : "Custom values"}>
+					<Card title="Speed" hint={preset ? preset.hint : "Custom values"}>
 						<div className="mb-3 grid grid-cols-3 gap-2">
 							{FEED_PRESETS.map((f) => {
 								const active = preset?.id === f.id;
@@ -136,7 +136,7 @@ const App = () => {
 							<div className="mt-3 grid grid-cols-2 gap-3">
 								<NumberField label="Stepover" suffix="× tool" step={0.05} value={params.stepover} onChange={(v) => set("stepover", v)} />
 								{len("safeZ", "Safe Z")}
-								<NumberField label="Spindle dwell" suffix="s" value={params.spindleDwell} onChange={(v) => set("spindleDwell", v)} />
+								<NumberField label="Spindle ramp up" suffix="s" value={params.spindleDwell} onChange={(v) => set("spindleDwell", v)} />
 							</div>
 						</details>
 					</Card>

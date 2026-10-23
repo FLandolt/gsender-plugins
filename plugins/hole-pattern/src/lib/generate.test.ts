@@ -24,12 +24,13 @@ describe("toolpath", () => {
 		expect(zLevels(p.depth, p.stepdown).at(-1)).toBe(-p.depth);
 	});
 	it("tool-sized hole is plunge only", () => {
-		const g = generateGcode({ ...defaultParams(), holeDiameter: 3.175 });
+		const g = generateGcode({ ...defaultParams(), holeDiameter: defaultParams().toolDiameter });
 		expect(g).not.toMatch(/G1 X/);
 	});
 	it("returns to the middle between levels", () => {
 		const p = defaultParams();
-		const back = [...generateGcode(p).matchAll(/^G1 X0\.79\d Y0$/gm)];
+		const rh = String(p.toolDiameter * 0.375).replace(".", "\\.");
+		const back = [...generateGcode(p).matchAll(new RegExp(`^G1 X${rh} Y0$`, "gm"))];
 		// 5 mm depth / 2 mm stepdown = 3 levels → 2 returns to the middle.
 		expect(back).toHaveLength(zLevels(p.depth, p.stepdown).length - 1);
 	});

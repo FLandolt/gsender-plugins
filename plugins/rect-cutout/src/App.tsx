@@ -97,14 +97,14 @@ const App = () => {
 								value={params.mode}
 								onChange={(mode) => update({ mode })}
 								options={[
-									{ value: "hole", label: "Opening" },
-									{ value: "part", label: "Part" },
+									{ value: "hole", label: "Inside" },
+									{ value: "part", label: "Outside" },
 								]}
 							/>
 							<p className="m-0 text-xs text-gray-500 dark:text-slate-400">
 								{params.mode === "hole"
-									? "Opening: the rectangle is removed, the material around it stays."
-									: "Part: the rectangle is kept, the bit cuts around the outside."}
+									? "Inside: the bit runs inside the line and the rectangle is removed, the material around it stays."
+									: "Outside: the bit runs outside the line and the rectangle is kept."}
 							</p>
 							<div className="grid grid-cols-2 gap-3">
 								{len("Tool diameter", params.toolDiameter, (v) => update({ toolDiameter: v }))}
@@ -137,7 +137,7 @@ const App = () => {
 						</div>
 					</Card>
 
-					<Card title="Material & speeds" hint={preset ? preset.hint : "Custom values"}>
+					<Card title="Speed" hint={preset ? preset.hint : "Custom values"}>
 						<div className="mb-3 grid grid-cols-3 gap-2">
 							{FEED_PRESETS.map((f) => (
 								<button
@@ -181,7 +181,7 @@ const App = () => {
 								/>
 								<div className="grid grid-cols-2 gap-3">
 									{len("Safe Z", params.safeZ, (v) => update({ safeZ: v }))}
-									<NumberField label="Spindle dwell" suffix="s" value={params.spindleDwell} onChange={(v) => update({ spindleDwell: v })} />
+									<NumberField label="Spindle ramp up" suffix="s" value={params.spindleDwell} onChange={(v) => update({ spindleDwell: v })} />
 								</div>
 							</div>
 						</details>

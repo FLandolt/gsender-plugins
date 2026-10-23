@@ -31,14 +31,14 @@ export type Params = {
 	stepover: number;
 	/** Retract height above the stock top, in mm. */
 	safeZ: number;
-	/** Seconds to dwell after spindle start; 0 disables the G4. */
+	/** Seconds to wait for the spindle to ramp up after start; 0 disables the G4. */
 	spindleDwell: number;
 };
 
-// Cutting values match the Simple Signs "Softwood" preset.
+// Cutting values match the "High" speed preset.
 export const defaultParams = (): Params => ({
 	units: "mm",
-	toolDiameter: 3.175,
+	toolDiameter: 4,
 	holeDiameter: 10,
 	depth: 5,
 	countX: 1,

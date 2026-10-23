@@ -23,21 +23,21 @@ describe("outline", () => {
 });
 
 describe("tool path", () => {
-	it("opening is inset by the tool radius, part is outset", () => {
+	it("inside is inset by the tool radius, outside is outset", () => {
 		const hole = toolOutline(base({ mode: "hole" })).vertices;
 		const part = toolOutline(base({ mode: "part" })).vertices;
 		const maxX = (v: { x: number }[]) => Math.max(...v.map((p) => p.x));
-		expect(maxX(hole)).toBeCloseTo(30 - 3.175 / 2);
-		expect(maxX(part)).toBeCloseTo(30 + 3.175 / 2);
+		expect(maxX(hole)).toBeCloseTo(30 - base().toolDiameter / 2);
+		expect(maxX(part)).toBeCloseTo(30 + base().toolDiameter / 2);
 	});
 	it("never leaves the allowed envelope", () => {
 		const p = base({ cornerRadius: 8 });
 		for (const v of toolOutline(p).vertices) {
-			expect(Math.abs(v.x)).toBeLessThanOrEqual(30 - 3.175 / 2 + 1e-6);
-			expect(Math.abs(v.y)).toBeLessThanOrEqual(20 - 3.175 / 2 + 1e-6);
+			expect(Math.abs(v.x)).toBeLessThanOrEqual(30 - base().toolDiameter / 2 + 1e-6);
+			expect(Math.abs(v.y)).toBeLessThanOrEqual(20 - base().toolDiameter / 2 + 1e-6);
 		}
 	});
-	it("hole + climb is clockwise, part + climb counter-clockwise", () => {
+	it("inside + climb is clockwise, outside + climb counter-clockwise", () => {
 		const area = (vs: { x: number; y: number }[]) =>
 			vs.reduce((a, v, i) => {
 				const n = vs[(i + 1) % vs.length];
@@ -87,14 +87,14 @@ describe("gcode", () => {
 	it("lower-left origin shifts X/Y into positive space", () => {
 		const { gcode } = generateGcode(base({ origin: "lower-left", mode: "part", tabs: { ...defaultParams().tabs, enabled: false } }));
 		for (const m of gcode.matchAll(/ X(-?[\d.]+) Y(-?[\d.]+)/g)) {
-			expect(Number(m[1])).toBeGreaterThanOrEqual(-3.175 / 2 - 1e-6);
-			expect(Number(m[2])).toBeGreaterThanOrEqual(-3.175 / 2 - 1e-6);
+			expect(Number(m[1])).toBeGreaterThanOrEqual(-base().toolDiameter / 2 - 1e-6);
+			expect(Number(m[2])).toBeGreaterThanOrEqual(-base().toolDiameter / 2 - 1e-6);
 		}
 	});
 });
 
 describe("check", () => {
-	it("flags a radius that is too large and a too-small opening", () => {
+	it("flags a radius that is too large and a too-small inside cut", () => {
 		expect(check(base({ cornerRadius: 25 })).errors).not.toHaveLength(0);
 		expect(check(base({ width: 3 })).errors).not.toHaveLength(0);
 		expect(check(base()).errors).toHaveLength(0);

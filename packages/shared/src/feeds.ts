@@ -1,4 +1,4 @@
-/** Feeds-and-speeds presets (mm, mm/min), same values as Simple Signs. */
+/** Feeds-and-speeds presets (mm, mm/min), High matches the Simple Signs softwood values. */
 export type FeedValues = {
 	feedrate: number;
 	plungeRate: number;
@@ -13,9 +13,9 @@ export type FeedPreset = FeedValues & {
 };
 
 export const FEED_PRESETS: FeedPreset[] = [
-	{ id: "softwood", label: "Softwood", hint: "Pine, cedar, plywood", feedrate: 1200, plungeRate: 400, spindleRpm: 15000, stepdown: 2 },
-	{ id: "hardwood", label: "Hardwood", hint: "Oak, maple, walnut", feedrate: 800, plungeRate: 250, spindleRpm: 18000, stepdown: 1.2 },
-	{ id: "gentle", label: "Take it easy", hint: "Slow and safe", feedrate: 700, plungeRate: 200, spindleRpm: 14000, stepdown: 1 },
+	{ id: "slow", label: "Slow", hint: "Gentle and safe, for hard material or thin bits", feedrate: 700, plungeRate: 200, spindleRpm: 14000, stepdown: 1 },
+	{ id: "medium", label: "Medium", hint: "A balance of speed and safety", feedrate: 950, plungeRate: 300, spindleRpm: 14500, stepdown: 1.5 },
+	{ id: "high", label: "High", hint: "Fastest, for soft material like pine or plywood", feedrate: 1200, plungeRate: 400, spindleRpm: 15000, stepdown: 2 },
 ];
 
 export const matchFeedPreset = (v: FeedValues): FeedPreset | null =>
