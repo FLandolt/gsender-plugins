@@ -66,7 +66,7 @@ const App = () => {
 	return (
 		<div className="flex h-full flex-col bg-gray-50 text-gray-900 dark:bg-slate-950 dark:text-slate-100">
 			<div className="grid min-h-0 grow grid-cols-1 gap-4 overflow-auto p-4 lg:grid-cols-[minmax(340px,440px)_1fr] lg:overflow-hidden">
-				<div className="flex min-h-0 flex-col gap-4 lg:overflow-y-auto lg:pr-1">
+				<div className="flex flex-col gap-4 lg:min-h-0 lg:overflow-y-auto lg:pr-1">
 					<div>
 						<h1 className="m-0 text-xl font-semibold">Rectangular Cutout</h1>
 						<p className="m-0 mt-1 text-sm text-gray-500 dark:text-slate-400">

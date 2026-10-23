@@ -14,6 +14,13 @@ type Props = {
 };
 
 /**
+ * The viewer's drill marker is scaled by its overall length (1.6 × `bit.size`), not
+ * its width. The model is 6.35 wide and 68.67 long, so this factor makes the drawn
+ * bit exactly as wide as the tool.
+ */
+const DRILL_SIZE_PER_DIAMETER = 68.67 / (1.6 * 6.35);
+
+/**
  * 3D toolpath preview using the same engine as gSender's own visualizer.
  * The viewer is imperative: it is driven through its ref rather than by props.
  */
@@ -45,7 +52,8 @@ const ToolpathView = ({ gcode, units, toolDiameter }: Props) => {
 
 	useEffect(() => {
 		// The viewer draws in G-code units, which are inches when the job is in inches.
-		const size = units === "in" ? toolDiameter / MM_PER_INCH : toolDiameter;
+		const diameter = units === "in" ? toolDiameter / MM_PER_INCH : toolDiameter;
+		const size = diameter * DRILL_SIZE_PER_DIAMETER;
 		const viewer = viewerRef.current;
 		if (viewer && size > 0) viewer.setOptions({ bit: { ...viewer.getOptions().bit, size } });
 	}, [toolDiameter, units]);
