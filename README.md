@@ -66,6 +66,10 @@ git push --tags
 
 The [release workflow](.github/workflows/release.yml) takes the plugin name and version from the tag, builds it, and attaches `<plugin>-<version>.zip` to the release. The website's download buttons pick up the newest release automatically.
 
+## How this was made
+
+These plugins were vibe-coded: written with heavy help from an AI coding assistant ([Claude](https://claude.com/claude-code)), directed and tested by me. The generators have unit tests and the output is plain `G0`/`G1`, but that is no substitute for checking the toolpath yourself. Read the preview, air-cut first, and please [report anything odd](https://github.com/FLandolt/gsender-plugins/issues).
+
 ## Credits
 
 Made for [gSender](https://sienci.com/gsender/), the free CNC software by [Sienci Labs](https://sienci.com/), and built on the [gSender Plugin SDK](https://github.com/Sienci-Labs/gsender/blob/dev/packages/plugin-sdk/README.md). Big thanks to the Sienci team. This project is not affiliated with Sienci Labs.
