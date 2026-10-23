@@ -130,7 +130,7 @@ const App = () => {
 									<div className="col-span-2">
 										<Stepper label="Tabs per side" value={params.tabs.perSide} max={4} onChange={(perSide) => updateTabs({ perSide })} />
 									</div>
-									{len("Tab length", params.tabs.length, (length) => updateTabs({ length }))}
+									{len("Tab length (base)", params.tabs.length, (length) => updateTabs({ length }))}
 									{len("Tab height", params.tabs.height, (height) => updateTabs({ height }))}
 								</div>
 							)}

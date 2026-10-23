@@ -55,17 +55,31 @@ describe("depth and tabs", () => {
 		const moves = buildMoves(p, o, tabSpans(p, o).spans);
 		expect(Math.min(...moves.map((m) => m.z))).toBeCloseTo(-p.depth);
 	});
-	it("tab floor holds at depth − tab height", () => {
+	it("tabs are trapezoids: sloped sides and a flat top at depth − tab height", () => {
 		const p = base();
 		const o = toolOutline(p);
 		const { spans } = tabSpans(p, o);
 		expect(spans).toHaveLength(4);
 		const moves = buildMoves(p, o, spans);
-		// In the final flat lap, every tab is held at the tab top.
 		const tabTop = -(p.depth - p.tabs.height);
-		const lastLap = moves.slice(-(o.vertices.length - 1 + 4 * spans.length));
-		expect(lastLap.filter((m) => Math.abs(m.z - tabTop) < 1e-9).length).toBeGreaterThanOrEqual(spans.length * 2);
-		expect(Math.min(...lastLap.map((m) => m.z))).toBeCloseTo(-p.depth);
+		// Final flat lap: the moves after the last point at (almost) full depth up to the end.
+		const flatLap = moves.slice(-(o.vertices.length - 1 + 4 * spans.length));
+		const top = flatLap.filter((m) => Math.abs(m.z - tabTop) < 1e-9);
+		expect(top.length).toBeGreaterThanOrEqual(spans.length * 2);
+		// Never a vertical wall: consecutive moves that change Z also change X or Y.
+		for (let i = 1; i < moves.length; i += 1) {
+			const a = moves[i - 1];
+			const b = moves[i];
+			if (Math.abs(a.z - b.z) > 1e-9) expect(Math.hypot(a.x - b.x, a.y - b.y)).toBeGreaterThan(1e-6);
+		}
+		// The rise over each side is at most 45°.
+		for (let i = 1; i < moves.length; i += 1) {
+			const a = moves[i - 1];
+			const b = moves[i];
+			const run = Math.hypot(a.x - b.x, a.y - b.y);
+			if (run > 1e-6 && b.z > a.z + 1e-9) expect((b.z - a.z) / run).toBeLessThanOrEqual(1 + 1e-6);
+		}
+		expect(Math.min(...flatLap.map((m) => m.z))).toBeCloseTo(-p.depth);
 	});
 	it("no tabs when disabled", () => {
 		const p = base({ tabs: { ...defaultParams().tabs, enabled: false } });

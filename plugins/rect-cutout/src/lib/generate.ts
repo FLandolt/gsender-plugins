@@ -5,8 +5,8 @@
  *
  * The bit never plunges: it ramps down along the outline, losing one stepdown
  * per lap, and finishes with one flat lap at full depth. Tabs are a raised
- * floor under that path — wherever a pass is deeper than the tab top, it is
- * held at the tab top for the length of the tab.
+ * trapezoidal floor under that path — wherever a pass is deeper than the tab
+ * floor, it climbs the sloped side, crosses the flat top and descends again.
  *
  * Work zero is either the centre of the rectangle or its lower-left corner; Z0
  * is the stock top.
@@ -47,17 +47,32 @@ export const tabSpans = (p: Params, outline: Outline): { spans: TabSpan[]; skipp
 		? placeTabs(outline.sides, p.tabs.perSide, p.tabs.length)
 		: { spans: [], skippedSides: 0 };
 
+/** Horizontal run of a tab's sloped side: 45° (as long as it is tall), at most half the tab. */
+const tabRun = (t: TabSpan, height: number): number => Math.min(height, (t.end - t.start) / 2);
+
+/**
+ * Trapezoidal tab floor: height above the bottom of the cut at path position `s`.
+ * Each tab is `end - start` long at its base, rises along sloped sides and has a
+ * flat top, so the bit climbs over it instead of meeting a vertical wall.
+ */
+const tabFloor = (s: number, spans: TabSpan[], height: number): number => {
+	let floor = 0;
+	for (const t of spans) {
+		if (s <= t.start || s >= t.end) continue;
+		const run = tabRun(t, height);
+		floor = Math.max(floor, Math.min(height, (Math.min(s - t.start, t.end - s) * height) / run));
+	}
+	return floor;
+};
+
 /** All moves for the full job, outline starting at (0,0)-centred coordinates. */
 export const buildMoves = (p: Params, outline: Outline, spans: TabSpan[]): Move[] => {
 	const laps = lapCount(p.depth, p.stepdown);
-	const tabTop = -(p.depth - p.tabs.height);
+	const height = p.tabs.height;
 	const moves: Move[] = [];
 	const vs = outline.vertices;
 
-	const inTab = (s: number) => spans.some((t) => s > t.start && s < t.end);
-
-	// Path positions where something changes: every vertex plus tab edges.
-	type Stop = { s: number; kind: "vertex" | "tabIn" | "tabOut"; x: number; y: number };
+	// Path positions where something changes: every vertex plus the tab corners.
 	const pointAt = (s: number) => {
 		let i = 1;
 		while (i < vs.length - 1 && vs[i].s < s) i += 1;
@@ -66,33 +81,37 @@ export const buildMoves = (p: Params, outline: Outline, spans: TabSpan[]): Move[
 		const t = b.s === a.s ? 0 : (s - a.s) / (b.s - a.s);
 		return { x: a.x + (b.x - a.x) * t, y: a.y + (b.y - a.y) * t };
 	};
-	const stops: Stop[] = vs.map((v) => ({ s: v.s, kind: "vertex" as const, x: v.x, y: v.y }));
+	const stopS = new Set<number>(vs.map((v) => v.s));
 	for (const t of spans) {
-		stops.push({ s: t.start, kind: "tabIn", ...pointAt(t.start) });
-		stops.push({ s: t.end, kind: "tabOut", ...pointAt(t.end) });
+		const run = tabRun(t, height);
+		for (const s of [t.start, t.start + run, t.end - run, t.end]) stopS.add(s);
 	}
-	stops.sort((a, b) => a.s - b.s);
+	const stops = [...stopS].sort((a, b) => a - b);
 
 	// Laps 0..laps-1 ramp down; one extra lap stays flat at full depth.
 	for (let lap = 0; lap <= laps; lap += 1) {
 		const flat = lap === laps;
-		const zFrom = -p.depth * (Math.min(lap, laps) / laps);
+		const zFrom = -p.depth * (lap / laps);
 		const zTo = flat ? -p.depth : -p.depth * ((lap + 1) / laps);
 		const ramp = (s: number) => (flat ? -p.depth : zFrom + (zTo - zFrom) * (s / outline.length));
-		const lift = (z: number, s: number) => (inTab(s) && z < tabTop ? tabTop : z);
+		// The bit follows the ramp, but never goes below the tab floor.
+		const zAt = (s: number) => Math.max(ramp(s), -p.depth + tabFloor(s, spans, height));
+		const gap = (s: number) => ramp(s) - (-p.depth + tabFloor(s, spans, height));
 
-		for (const st of stops) {
-			if (lap > 0 && st.s === 0) continue; // the lap's first point is the previous lap's last
-			const z = ramp(st.s);
-			if (st.kind === "tabIn") {
-				moves.push({ x: st.x, y: st.y, z });
-				moves.push({ x: st.x, y: st.y, z: Math.max(z, tabTop) });
-			} else if (st.kind === "tabOut") {
-				moves.push({ x: st.x, y: st.y, z: Math.max(z, tabTop) });
-				moves.push({ x: st.x, y: st.y, z });
-			} else {
-				moves.push({ x: st.x, y: st.y, z: lift(z, st.s) });
+		const lapStops: number[] = [];
+		stops.forEach((s, k) => {
+			if (k > 0) {
+				// Where the ramp crosses a sloped tab side, the path changes direction.
+				const a = stops[k - 1];
+				const ga = gap(a + 1e-9);
+				const gb = gap(s - 1e-9);
+				if ((ga < 0 && gb > 0) || (ga > 0 && gb < 0)) lapStops.push(a + (s - a) * (ga / (ga - gb)));
 			}
+			lapStops.push(s);
+		});
+		for (const s of lapStops) {
+			if (lap > 0 && s === 0) continue; // the lap's first point is the previous lap's last
+			moves.push({ ...pointAt(s), z: zAt(s) });
 		}
 	}
 	return moves;
@@ -130,7 +149,7 @@ export const generateGcode = (p: Params): Result => {
 	out.push(comment(`Tool: endmill ${fmt(p.toolDiameter, 3)} mm`));
 	out.push(comment(`Feeds: cut ${fmt(p.feedrate, 0)}, plunge ${fmt(p.plungeRate, 0)} mm/min, spindle ${fmt(p.spindleRpm, 0)} RPM`));
 	if (spans.length > 0)
-		out.push(comment(`Tabs: ${spans.length} x ${fmt(p.tabs.length, 2)} mm long, ${fmt(p.tabs.height, 2)} mm tall`));
+		out.push(comment(`Tabs: ${spans.length} x ${fmt(p.tabs.length, 2)} mm long at the base, ${fmt(p.tabs.height, 2)} mm tall, sloped sides`));
 	out.push(comment(`Work zero: ${p.origin === "center" ? "centre of the rectangle" : "lower-left corner of the rectangle"}, Z0 = top of stock`));
 	for (const w of warnings) out.push(comment(`WARNING: ${w}`));
 
