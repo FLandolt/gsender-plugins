@@ -208,7 +208,7 @@ const App = () => {
 					<div className="min-h-72 grow">
 						{previewCode ? (
 							<Suspense fallback={<div className="h-full rounded-xl bg-slate-950" />}>
-								<ToolpathView gcode={previewCode} units={units} />
+								<ToolpathView gcode={previewCode} units={units} toolDiameter={params.toolDiameter} />
 							</Suspense>
 						) : (
 							<div className="flex h-full items-center justify-center rounded-xl border border-dashed border-gray-300 text-sm text-gray-500 dark:border-slate-700">
