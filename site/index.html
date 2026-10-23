@@ -142,7 +142,7 @@ footer .wrap { display: flex; flex-wrap: wrap; gap: 12px 24px; justify-content: 
 	<section id="plugins">
 		<div class="wrap">
 			<h2>Plugins</h2>
-			<p class="sub">Each plugin is a single zip. Download the one you need.</p>
+			<p class="sub">Each plugin is a single zip. Try it in your browser first &mdash; in the demo, <em>Load to gSender</em> downloads the G-code instead.</p>
 			<div class="grid" id="grid"></div>
 			<div class="safety"><strong>Always check before you cut.</strong> Look at the toolpath preview, run the job in the air first, and keep a hand on the stop button. You use these plugins at your own risk.</div>
 		</div>
@@ -226,7 +226,7 @@ const render = (releases) => {
 				<div class="title"><h3>${esc(p.name)}</h3>${version ? `<span class="ver">v${esc(version)}</span>` : ""}</div>
 				<p>${p.blurb}</p>
 				<ul class="feat">${p.features.map(f => `<li>${f}</li>`).join("")}</ul>
-				<div class="actions">${dl}<a class="btn" href="https://github.com/${REPO}/tree/main/plugins/${p.id}">Docs &amp; source</a></div>
+				<div class="actions">${dl}<a class="btn" href="demos/${esc(p.id)}/" target="_blank" rel="noopener">Try live demo</a><a class="btn" href="https://github.com/${REPO}/tree/main/plugins/${p.id}">Docs &amp; source</a></div>
 				<span class="meta">${meta}</span>
 			</div>
 		</article>`;

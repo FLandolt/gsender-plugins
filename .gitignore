@@ -8,3 +8,4 @@ npm-debug.log*
 ui/
 dist/
 dummy-non-existing-folder/
+site/demos/
