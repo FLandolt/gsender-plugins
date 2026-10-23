@@ -128,9 +128,24 @@ const App = () => {
 							{params.tabs.enabled && (
 								<div className="grid grid-cols-2 gap-3">
 									<div className="col-span-2">
+										<Segmented
+											value={params.tabs.shape}
+											onChange={(shape) => updateTabs({ shape })}
+											options={[
+												{ value: "trapezoid", label: "Trapezoid" },
+												{ value: "rectangular", label: "Rectangular" },
+											]}
+										/>
+										<p className="m-0 mt-2 text-xs text-gray-500 dark:text-slate-400">
+											{params.tabs.shape === "trapezoid"
+												? "Sloped sides: the bit climbs over the tab, easier on the cutter."
+												: "Vertical sides: the bit stops, lifts and drops. Simple, but harder on the cutter."}
+										</p>
+									</div>
+									<div className="col-span-2">
 										<Stepper label="Tabs per side" value={params.tabs.perSide} max={4} onChange={(perSide) => updateTabs({ perSide })} />
 									</div>
-									{len("Tab length (base)", params.tabs.length, (length) => updateTabs({ length }))}
+									{len(params.tabs.shape === "trapezoid" ? "Tab length (base)" : "Tab length", params.tabs.length, (length) => updateTabs({ length }))}
 									{len("Tab height", params.tabs.height, (height) => updateTabs({ height }))}
 								</div>
 							)}

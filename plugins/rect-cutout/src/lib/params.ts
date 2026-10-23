@@ -9,6 +9,9 @@ import type { Units } from "@shared/units";
 export type { Units };
 
 /** `hole` keeps the material around the rectangle; `part` keeps the rectangle. */
+/** `trapezoid` has sloped sides (easier on the bit); `rectangular` has vertical sides. */
+export type TabShape = "trapezoid" | "rectangular";
+
 export type CutMode = "hole" | "part";
 
 export type Direction = "climb" | "conventional";
@@ -37,9 +40,10 @@ export type Params = {
 	spindleDwell: number;
 	tabs: {
 		enabled: boolean;
+		shape: TabShape;
 		/** Tabs on each straight side (the middle one if 1, evenly spread if more). */
 		perSide: number;
-		/** Length along the cut, mm. */
+		/** Length along the cut, mm (at the base for trapezoid tabs). */
 		length: number;
 		/** Height of the tab above the bottom of the cut, mm. */
 		height: number;
@@ -62,7 +66,7 @@ export const defaultParams = (): Params => ({
 	stepdown: 2,
 	safeZ: 5,
 	spindleDwell: 2,
-	tabs: { enabled: true, perSide: 1, length: 8, height: 3 },
+	tabs: { enabled: true, shape: "trapezoid", perSide: 1, length: 8, height: 3 },
 });
 
 export type Problems = { errors: string[]; warnings: string[] };

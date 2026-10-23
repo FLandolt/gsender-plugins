@@ -5,8 +5,9 @@
  *
  * The bit never plunges: it ramps down along the outline, losing one stepdown
  * per lap, and finishes with one flat lap at full depth. Tabs are a raised
- * trapezoidal floor under that path — wherever a pass is deeper than the tab
- * floor, it climbs the sloped side, crosses the flat top and descends again.
+ * floor under that path — wherever a pass is deeper than the tab floor, it
+ * climbs the side (sloped for trapezoid tabs, vertical for rectangular ones),
+ * crosses the flat top and descends again.
  *
  * Work zero is either the centre of the rectangle or its lower-left corner; Z0
  * is the stock top.
@@ -50,6 +51,41 @@ export const tabSpans = (p: Params, outline: Outline): { spans: TabSpan[]; skipp
 /** Horizontal run of a tab's sloped side: 45° (as long as it is tall), at most half the tab. */
 const tabRun = (t: TabSpan, height: number): number => Math.min(height, (t.end - t.start) / 2);
 
+/** Rectangular tabs: vertical sides, flat top. Used when the shape is "rectangular". */
+const buildMovesRect = (p: Params, outline: Outline, spans: TabSpan[], pointAt: (s: number) => { x: number; y: number }): Move[] => {
+	const laps = lapCount(p.depth, p.stepdown);
+	const tabTop = -(p.depth - p.tabs.height);
+	const moves: Move[] = [];
+	const inTab = (s: number) => spans.some((t) => s > t.start && s < t.end);
+	type Stop = { s: number; kind: "vertex" | "tabIn" | "tabOut"; x: number; y: number };
+	const stops: Stop[] = outline.vertices.map((v) => ({ s: v.s, kind: "vertex" as const, x: v.x, y: v.y }));
+	for (const t of spans) {
+		stops.push({ s: t.start, kind: "tabIn", ...pointAt(t.start) });
+		stops.push({ s: t.end, kind: "tabOut", ...pointAt(t.end) });
+	}
+	stops.sort((a, b) => a.s - b.s);
+	for (let lap = 0; lap <= laps; lap += 1) {
+		const flat = lap === laps;
+		const zFrom = -p.depth * (lap / laps);
+		const zTo = flat ? -p.depth : -p.depth * ((lap + 1) / laps);
+		const ramp = (s: number) => (flat ? -p.depth : zFrom + (zTo - zFrom) * (s / outline.length));
+		for (const st of stops) {
+			if (lap > 0 && st.s === 0) continue; // the lap's first point is the previous lap's last
+			const z = ramp(st.s);
+			if (st.kind === "tabIn") {
+				moves.push({ x: st.x, y: st.y, z });
+				moves.push({ x: st.x, y: st.y, z: Math.max(z, tabTop) });
+			} else if (st.kind === "tabOut") {
+				moves.push({ x: st.x, y: st.y, z: Math.max(z, tabTop) });
+				moves.push({ x: st.x, y: st.y, z });
+			} else {
+				moves.push({ x: st.x, y: st.y, z: inTab(st.s) && z < tabTop ? tabTop : z });
+			}
+		}
+	}
+	return moves;
+};
+
 /**
  * Trapezoidal tab floor: height above the bottom of the cut at path position `s`.
  * Each tab is `end - start` long at its base, rises along sloped sides and has a
@@ -81,6 +117,7 @@ export const buildMoves = (p: Params, outline: Outline, spans: TabSpan[]): Move[
 		const t = b.s === a.s ? 0 : (s - a.s) / (b.s - a.s);
 		return { x: a.x + (b.x - a.x) * t, y: a.y + (b.y - a.y) * t };
 	};
+	if (p.tabs.shape === "rectangular") return buildMovesRect(p, outline, spans, pointAt);
 	const stopS = new Set<number>(vs.map((v) => v.s));
 	for (const t of spans) {
 		const run = tabRun(t, height);
@@ -149,7 +186,7 @@ export const generateGcode = (p: Params): Result => {
 	out.push(comment(`Tool: endmill ${fmt(p.toolDiameter, 3)} mm`));
 	out.push(comment(`Feeds: cut ${fmt(p.feedrate, 0)}, plunge ${fmt(p.plungeRate, 0)} mm/min, spindle ${fmt(p.spindleRpm, 0)} RPM`));
 	if (spans.length > 0)
-		out.push(comment(`Tabs: ${spans.length} x ${fmt(p.tabs.length, 2)} mm long at the base, ${fmt(p.tabs.height, 2)} mm tall, sloped sides`));
+		out.push(comment(`Tabs: ${spans.length} x ${fmt(p.tabs.length, 2)} mm long${p.tabs.shape === "trapezoid" ? " at the base" : ""}, ${fmt(p.tabs.height, 2)} mm tall, ${p.tabs.shape === "trapezoid" ? "sloped" : "vertical"} sides`));
 	out.push(comment(`Work zero: ${p.origin === "center" ? "centre of the rectangle" : "lower-left corner of the rectangle"}, Z0 = top of stock`));
 	for (const w of warnings) out.push(comment(`WARNING: ${w}`));
 

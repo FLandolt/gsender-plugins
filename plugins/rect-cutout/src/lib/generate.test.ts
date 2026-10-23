@@ -81,6 +81,17 @@ describe("depth and tabs", () => {
 		}
 		expect(Math.min(...flatLap.map((m) => m.z))).toBeCloseTo(-p.depth);
 	});
+	it("rectangular tabs hold the tab top with vertical sides", () => {
+		const p = base({ tabs: { ...defaultParams().tabs, shape: "rectangular" } });
+		const o = toolOutline(p);
+		const { spans } = tabSpans(p, o);
+		const moves = buildMoves(p, o, spans);
+		const tabTop = -(p.depth - p.tabs.height);
+		expect(moves.filter((m) => Math.abs(m.z - tabTop) < 1e-9).length).toBeGreaterThanOrEqual(spans.length * 2);
+		const vertical = moves.slice(1).filter((m, i) => Math.abs(m.z - moves[i].z) > 1e-9 && Math.hypot(m.x - moves[i].x, m.y - moves[i].y) < 1e-9);
+		expect(vertical.length).toBeGreaterThan(0);
+		expect(Math.min(...moves.map((m) => m.z))).toBeCloseTo(-p.depth);
+	});
 	it("no tabs when disabled", () => {
 		const p = base({ tabs: { ...defaultParams().tabs, enabled: false } });
 		expect(tabSpans(p, toolOutline(p)).spans).toHaveLength(0);

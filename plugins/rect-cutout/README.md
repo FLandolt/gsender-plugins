@@ -11,8 +11,9 @@ part — with an adjustable corner radius and holding tabs. GRBL-safe output
   sharp *inside* corners; the plugin warns and uses the tool radius instead.
 - **No plunge** – the bit ramps down along the outline, one stepdown per lap,
   then runs one flat lap at full depth.
-- **Tabs** – 1–4 per straight side, trapezoidal: sloped sides at up to 45° so the
-  bit climbs over them instead of hitting a wall. Set the length at the base and the height. Sides too short for
+- **Tabs** – 1–4 per straight side, with length and height. Choose **trapezoid**
+  (default: sloped sides at up to 45°, so the bit climbs over them, easier on the
+  cutter; length is measured at the base) or **rectangular** (vertical sides). Sides too short for
   them are skipped, with a warning.
 - **Zero** – centre or lower-left corner of the rectangle; Z0 is the stock top.
 - **Climb or conventional** direction, same Slow / Medium / High speed presets as the other plugins.
