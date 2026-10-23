@@ -1,5 +1,5 @@
 {
-	"id": "com.kgn.hole-pattern",
+	"id": "io.github.flandolt.hole-pattern",
 	"name": "Hole Pattern",
 	"version": "0.1.0",
 	"engine": ">=1.6.0",

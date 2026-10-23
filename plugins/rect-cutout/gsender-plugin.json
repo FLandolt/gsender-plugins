@@ -1,5 +1,5 @@
 {
-	"id": "com.kgn.rect-cutout",
+	"id": "io.github.flandolt.rect-cutout",
 	"name": "Rectangular Cutout",
 	"version": "0.1.0",
 	"engine": ">=1.6.0",
