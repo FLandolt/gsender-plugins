@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>gSender Plugins</title>
+<title>Plugins for gSender</title>
 <meta name="description" content="Free plugins for gSender that generate GRBL-safe G-code: hole patterns and rectangular cut-outs with tabs." />
 <style>
 :root {
@@ -53,7 +53,8 @@ a { color: inherit; }
 .nav { position: sticky; top: 0; z-index: 10; border-bottom: 1px solid var(--line); background: var(--nav-bg); backdrop-filter: saturate(180%) blur(12px); -webkit-backdrop-filter: saturate(180%) blur(12px); }
 .nav .wrap { display: flex; align-items: center; justify-content: space-between; height: 60px; }
 .brand { display: flex; align-items: center; gap: 10px; font-weight: 600; text-decoration: none; letter-spacing: -0.01em; }
-.brand i { width: 0; height: 0; border-left: 8px solid transparent; border-right: 8px solid transparent; border-bottom: 14px solid var(--text); }
+.brand i { position: relative; width: 16px; height: 16px; border: 2px solid var(--text); border-radius: 50%; }
+.brand i::after { content: ""; position: absolute; inset: 3px; border-radius: 50%; background: var(--accent); }
 .links { display: flex; align-items: center; gap: 22px; font-size: 14px; color: var(--muted); }
 .links a { text-decoration: none; }
 .links a:hover { color: var(--text); }
@@ -148,7 +149,7 @@ footer a:hover { color: var(--text); }
 
 <nav class="nav">
 	<div class="wrap">
-		<a class="brand" href="#"><i></i> gSender plugins</a>
+		<a class="brand" href="#"><i></i> Plugins for gSender</a>
 		<div class="links">
 			<a class="hide-sm" href="#plugins">Plugins</a>
 			<a class="hide-sm" href="#install">How to use</a>
@@ -161,8 +162,8 @@ footer a:hover { color: var(--text); }
 <header class="hero">
 	<div class="wrap">
 		<span class="badge mono"><b></b> Free &amp; open source</span>
-		<h1>Toolpaths, <span>without the CAM software.</span></h1>
-		<p class="lead">Small gSender plugins that turn a few numbers into clean, GRBL-safe G-code, with a live 3D preview.</p>
+		<h1>Plugins for <span>gSender.</span></h1>
+		<p class="lead">Small, free plugins that turn a few numbers into clean, GRBL-safe G-code, with a live 3D preview. No CAM software needed.</p>
 		<div class="cta">
 			<a class="btn primary" href="#plugins">Browse plugins</a>
 			<a class="btn" href="https://github.com/FLandolt/gsender-plugins">View on GitHub</a>
