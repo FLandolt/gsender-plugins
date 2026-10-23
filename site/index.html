@@ -9,7 +9,6 @@
 :root {
 	--bg: #ffffff;
 	--bg-soft: #fafafa;
-	--card: #ffffff;
 	--text: #0a0a0a;
 	--muted: #666666;
 	--line: #eaeaea;
@@ -25,11 +24,10 @@
 	:root {
 		--bg: #000000;
 		--bg-soft: #0a0a0a;
-		--card: #141414;
 		--text: #ededed;
 		--muted: #a1a1a1;
-		--line: #2e2e2e;
-		--line-strong: #454545;
+		--line: #1f1f1f;
+		--line-strong: #333333;
 		--btn-bg: #ededed;
 		--btn-ink: #0a0a0a;
 		--accent: #52a8ff;
@@ -66,7 +64,7 @@ a { color: inherit; }
 .btn {
 	display: inline-flex; align-items: center; justify-content: center; gap: 8px;
 	height: 40px; padding: 0 18px; border-radius: 8px;
-	border: 1px solid var(--line-strong); background: var(--card); color: var(--text);
+	border: 1px solid var(--line-strong); background: var(--bg); color: var(--text);
 	font: inherit; font-size: 14px; font-weight: 500; text-decoration: none; white-space: nowrap;
 	transition: background .15s, border-color .15s;
 }
@@ -101,9 +99,8 @@ h2 { margin: 0 0 12px; font-size: clamp(1.8rem, 4vw, 2.5rem); letter-spacing: -0
 
 /* Plugin cards */
 .grid { display: grid; gap: 20px; grid-template-columns: repeat(auto-fit, minmax(min(100%, 440px), 1fr)); }
-.card { display: flex; flex-direction: column; border: 1px solid var(--line); border-radius: 12px; background: var(--card); overflow: hidden; transition: border-color .15s, box-shadow .15s; }
+.card { display: flex; flex-direction: column; border: 1px solid var(--line); border-radius: 12px; background: var(--bg); overflow: hidden; transition: border-color .15s, box-shadow .15s; }
 .card:hover { border-color: var(--line-strong); box-shadow: 0 8px 30px rgb(0 0 0 / 0.06); }
-@media (prefers-color-scheme: dark) { .card:hover { box-shadow: 0 8px 30px rgb(255 255 255 / 0.04); } }
 .art {
 	aspect-ratio: 16 / 7; display: grid; place-items: center;
 	background-color: var(--bg-soft); border-bottom: 1px solid var(--line);
@@ -126,7 +123,7 @@ h2 { margin: 0 0 12px; font-size: clamp(1.8rem, 4vw, 2.5rem); letter-spacing: -0
 
 /* Steps */
 .steps { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 280px), 1fr)); border: 1px solid var(--line); border-radius: 12px; overflow: hidden; }
-.step { padding: 28px; background: var(--card); border-right: 1px solid var(--line); border-bottom: 1px solid var(--line); margin: 0 -1px -1px 0; }
+.step { padding: 28px; background: var(--bg); border-right: 1px solid var(--line); border-bottom: 1px solid var(--line); margin: 0 -1px -1px 0; }
 .step .n { display: block; margin-bottom: 16px; font-size: 13px; color: var(--muted); }
 .step h3 { margin: 0 0 6px; font-size: 1.1rem; letter-spacing: -0.01em; }
 .step p { margin: 0; font-size: 15px; color: var(--muted); }
@@ -232,10 +229,10 @@ const REPO = "FLandolt/gsender-plugins";
 
 const ART = {
 	holes: `<svg viewBox="0 0 320 140" role="img" aria-label="Grid of round holes">
-		${[0,1,2].map(r => [0,1,2,3].map(c => `<g><circle cx="${70 + c*60}" cy="${32 + r*38}" r="14" fill="var(--card)" stroke="var(--art)" stroke-width="1.5"/><circle cx="${70 + c*60}" cy="${32 + r*38}" r="6" fill="none" stroke="var(--art)" stroke-opacity=".4" stroke-width="1.2"/></g>`).join("")).join("")}
+		${[0,1,2].map(r => [0,1,2,3].map(c => `<g><circle cx="${70 + c*60}" cy="${32 + r*38}" r="14" fill="var(--bg)" stroke="var(--art)" stroke-width="1.5"/><circle cx="${70 + c*60}" cy="${32 + r*38}" r="6" fill="none" stroke="var(--art)" stroke-opacity=".4" stroke-width="1.2"/></g>`).join("")).join("")}
 		<circle cx="70" cy="32" r="3" fill="#ef4444"/></svg>`,
 	rect: `<svg viewBox="0 0 320 140" role="img" aria-label="Rounded rectangle with tabs">
-		<rect x="70" y="26" width="180" height="88" rx="22" fill="var(--card)" stroke="var(--art)" stroke-width="1.5"/>
+		<rect x="70" y="26" width="180" height="88" rx="22" fill="var(--bg)" stroke="var(--art)" stroke-width="1.5"/>
 		${[[160,26,28,0],[160,114,28,0],[70,70,0,28],[250,70,0,28]].map(([x,y,w,h]) => w ? `<rect x="${x-w/2}" y="${y-3.5}" width="${w}" height="7" rx="2" fill="var(--bg-soft)" stroke="var(--art)" stroke-width="1.2"/>` : `<rect x="${x-3.5}" y="${y-h/2}" width="7" height="${h}" rx="2" fill="var(--bg-soft)" stroke="var(--art)" stroke-width="1.2"/>`).join("")}
 		<circle cx="160" cy="70" r="3" fill="#ef4444"/></svg>`
 };
