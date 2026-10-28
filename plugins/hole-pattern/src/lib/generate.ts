@@ -11,7 +11,7 @@
  *
  * Holes are cut one after another. Each hole is cut level by level (`stepdown`):
  * at the hole centre the bit spirals down in a small helix to the level's
- * depth, spirals outward (flat) until it reaches the wall, runs one full circle
+ * depth, runs one flat circle there to clear the helix's ramp, spirals outward (flat) until it reaches the wall, runs one full circle
  * on the wall, then returns to the centre and repeats for the next level.
  * A hole exactly as wide as the tool can't spiral, so it is peck-plunged.
  *
@@ -125,6 +125,8 @@ export const generateGcode = (p: Params): string => {
 					const start: Pt = { x: h.x + rh, y: h.y };
 					const [h1, h2] = circleMoves(nf, { from: start, centre, z, zFrom: zPrev, cw: false });
 					out.push(`${h1}${feed}`, h2);
+						// 1b. One flat circle at full depth, so the helix's ramp is cleaned off the floor.
+						out.push(...circleMoves(nf, { from: start, centre, cw: false }));
 					// 2. Flat spiral out to the wall: quarter-turn arcs, each reaching a little wider than the last.
 					let cur = start;
 					if (wall - rh > 1e-6) {
@@ -151,7 +153,11 @@ export const generateGcode = (p: Params): string => {
 						const zk = zPrev + (z - zPrev) * (k / nh);
 						out.push(`G1 ${at(rh, (2 * Math.PI * k) / nh)} Z${c(zk)}${li === 0 && k === 1 ? feed : ""}`);
 					}
-					// 2. Flat spiral out to the wall: radius grows linearly with angle.
+					// 1b. One flat circle at full depth, so the helix's ramp is cleaned off the floor.
+						for (let k = 1; k <= nh; k += 1) {
+							out.push(`G1 ${at(rh, (2 * Math.PI * k) / nh)}`);
+						}
+						// 2. Flat spiral out to the wall: radius grows linearly with angle.
 					const revs = Math.max(1, Math.ceil((wall - rh) / step - 1e-9));
 					const ns = segmentsFor(wall) * revs;
 					for (let k = 1; k <= ns; k += 1) {

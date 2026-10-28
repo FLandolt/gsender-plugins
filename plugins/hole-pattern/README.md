@@ -14,7 +14,8 @@ upper-left or upper-right hole instead; the holes then extend away from that cor
 
 Output is `G0`/`G1` plus `G2`/`G3` arcs (no canned cycles, no cutter compensation).
 Holes are cut one after another, level by level: the bit spirals down in the middle
-(on a circle 3/4 of the tool diameter wide) to the level's depth, spirals outward to
+(on a circle 3/4 of the tool diameter wide) to the level's depth, runs one flat full
+circle there (so the helix's ramp is cleaned off the floor), spirals outward to
 the wall, runs a full circle on the wall, returns to the middle and repeats for the
 next stepdown.
 
