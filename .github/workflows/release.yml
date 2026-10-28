@@ -1,0 +1,60 @@
+name: Release
+
+# Tag a plugin to release it:  git tag hole-pattern-v0.2.0 && git push --tags
+on:
+  push:
+    tags:
+      - "*-v*.*.*"
+
+permissions:
+  contents: write
+
+jobs:
+  build-and-release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Work out plugin and version from the tag
+        run: |
+          TAG="${GITHUB_REF_NAME}"
+          echo "PLUGIN=${TAG%-v*}" >> "$GITHUB_ENV"
+          echo "VERSION=${TAG##*-v}" >> "$GITHUB_ENV"
+
+      - run: npm ci
+
+      - name: Sync version to tag
+        run: |
+          cd "plugins/$PLUGIN"
+          node -e "
+            const fs = require('fs');
+            for (const file of ['package.json', 'gsender-plugin.json']) {
+              const data = JSON.parse(fs.readFileSync(file, 'utf8'));
+              data.version = process.env.VERSION;
+              fs.writeFileSync(file, JSON.stringify(data, null, '\t') + '\n');
+            }
+          "
+
+      - name: Build
+        run: npm run build --workspace "plugins/$PLUGIN"
+
+      - name: Package plugin zip
+        run: |
+          STAGE="$(mktemp -d)/$PLUGIN"
+          mkdir -p "$STAGE"
+          cp "plugins/$PLUGIN/package.json" "plugins/$PLUGIN/gsender-plugin.json" "$STAGE/"
+          cp -r "plugins/$PLUGIN/ui" "$STAGE/"
+          (cd "$STAGE" && zip -r "$GITHUB_WORKSPACE/$PLUGIN-$VERSION.zip" .)
+
+      - name: Create release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: ${{ env.PLUGIN }}-*.zip
+          generate_release_notes: true

@@ -1,0 +1,25 @@
+@import "tailwindcss";
+
+/* gSender sets html.dark on the iframe, so key dark mode off the class
+   rather than prefers-color-scheme. */
+/* Class names used by the shared components live outside this package. */
+@source "../../../packages/shared/src";
+
+@custom-variant dark (&:where(.dark, .dark *));
+
+/* gSender renders plugins in an iframe sized by the host, so the app owns its
+   own scrolling rather than growing the frame. */
+html,
+body,
+#root {
+	height: 100%;
+}
+
+body {
+	margin: 0;
+	font-family:
+		system-ui,
+		-apple-system,
+		"Segoe UI",
+		sans-serif;
+}

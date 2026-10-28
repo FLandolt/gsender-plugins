@@ -1,0 +1,344 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Plugins for gSender</title>
+<meta name="description" content="Free plugins for gSender that generate GRBL-safe G-code: hole patterns and rectangular cut-outs with tabs." />
+<style>
+:root {
+	--bg: #ffffff;
+	--bg-soft: #fafafa;
+	--text: #0a0a0a;
+	--muted: #666666;
+	--line: #eaeaea;
+	--line-strong: #d4d4d4;
+	--btn-bg: #0a0a0a;
+	--btn-ink: #ffffff;
+	--accent: #0070f3;
+	--grid-dot: #d9d9d9;
+	--art: #0a0a0a;
+	--nav-bg: rgb(255 255 255 / 0.8);
+}
+@media (prefers-color-scheme: dark) {
+	:root {
+		--bg: #000000;
+		--bg-soft: #0a0a0a;
+		--text: #ededed;
+		--muted: #a1a1a1;
+		--line: #1f1f1f;
+		--line-strong: #333333;
+		--btn-bg: #ededed;
+		--btn-ink: #0a0a0a;
+		--accent: #52a8ff;
+		--grid-dot: #2a2a2a;
+		--art: #ededed;
+		--nav-bg: rgb(0 0 0 / 0.8);
+	}
+}
+* { box-sizing: border-box; }
+html { scroll-behavior: smooth; }
+body {
+	margin: 0;
+	background: var(--bg);
+	color: var(--text);
+	font: 16px/1.6 "Geist", "Inter", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+	-webkit-font-smoothing: antialiased;
+}
+a { color: inherit; }
+.wrap { width: min(1080px, 100% - 32px); margin-inline: auto; }
+.mono { font-family: ui-monospace, "Geist Mono", SFMono-Regular, Menlo, monospace; }
+
+/* Nav */
+.nav { position: sticky; top: 0; z-index: 10; border-bottom: 1px solid var(--line); background: var(--nav-bg); backdrop-filter: saturate(180%) blur(12px); -webkit-backdrop-filter: saturate(180%) blur(12px); }
+.nav .wrap { display: flex; align-items: center; justify-content: space-between; height: 60px; }
+.brand { display: flex; align-items: center; gap: 10px; font-weight: 600; text-decoration: none; letter-spacing: -0.01em; }
+.brand i { position: relative; width: 16px; height: 16px; border: 2px solid var(--text); border-radius: 50%; }
+.brand i::after { content: ""; position: absolute; inset: 3px; border-radius: 50%; background: var(--accent); }
+.links { display: flex; align-items: center; gap: 22px; font-size: 14px; color: var(--muted); }
+.links a { text-decoration: none; }
+.links a:hover { color: var(--text); }
+.links .hide-sm { display: inline; }
+
+/* Buttons */
+.btn {
+	display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+	height: 40px; padding: 0 18px; border-radius: 8px;
+	border: 1px solid var(--line-strong); background: var(--bg); color: var(--text);
+	font: inherit; font-size: 14px; font-weight: 500; text-decoration: none; white-space: nowrap;
+	transition: background .15s, border-color .15s;
+}
+.btn:hover { background: var(--bg-soft); border-color: var(--text); }
+.btn.primary { background: var(--btn-bg); border-color: var(--btn-bg); color: var(--btn-ink); }
+.btn.primary:hover { opacity: .85; background: var(--btn-bg); }
+.btn.small { height: 36px; padding: 0 14px; }
+.btn[aria-disabled="true"] { opacity: .5; }
+
+/* Hero */
+.hero { position: relative; text-align: center; padding: 96px 0 80px; border-bottom: 1px solid var(--line); overflow: hidden; }
+.hero::before {
+	content: ""; position: absolute; inset: 0; z-index: 0;
+	background-image: radial-gradient(var(--grid-dot) 1px, transparent 1px);
+	background-size: 24px 24px;
+	mask-image: radial-gradient(ellipse 60% 70% at 50% 0%, #000 20%, transparent 75%);
+	-webkit-mask-image: radial-gradient(ellipse 60% 70% at 50% 0%, #000 20%, transparent 75%);
+}
+.hero .wrap { position: relative; z-index: 1; }
+.badge { display: inline-flex; align-items: center; gap: 8px; padding: 4px 12px; border: 1px solid var(--line-strong); border-radius: 999px; font-size: 13px; color: var(--muted); background: var(--bg); }
+.badge b { width: 6px; height: 6px; border-radius: 50%; background: #10b981; }
+h1 { margin: 24px auto 16px; max-width: 800px; font-size: clamp(2.4rem, 7vw, 4.5rem); line-height: 1.04; letter-spacing: -0.045em; font-weight: 700; }
+h1 span { background: linear-gradient(180deg, var(--text), var(--muted)); -webkit-background-clip: text; background-clip: text; color: transparent; }
+.lead { margin: 0 auto 32px; max-width: 560px; font-size: 1.2rem; color: var(--muted); }
+.cta { display: flex; flex-wrap: wrap; justify-content: center; gap: 12px; }
+
+/* Sections */
+section { padding: 80px 0; border-bottom: 1px solid var(--line); }
+.eyebrow { margin: 0 0 8px; font-size: 13px; color: var(--muted); text-transform: uppercase; letter-spacing: .08em; }
+h2 { margin: 0 0 12px; font-size: clamp(1.8rem, 4vw, 2.5rem); letter-spacing: -0.035em; line-height: 1.1; }
+.sub { margin: 0 0 40px; max-width: 560px; color: var(--muted); }
+
+/* Plugin cards */
+.grid { display: grid; gap: 20px; grid-template-columns: repeat(auto-fit, minmax(min(100%, 440px), 1fr)); }
+.card { display: flex; flex-direction: column; border: 1px solid var(--line); border-radius: 12px; background: var(--bg); overflow: hidden; transition: border-color .15s, box-shadow .15s; }
+.card:hover { border-color: var(--line-strong); box-shadow: 0 8px 30px rgb(0 0 0 / 0.06); }
+.art {
+	aspect-ratio: 16 / 7; display: grid; place-items: center;
+	background-color: var(--bg-soft); border-bottom: 1px solid var(--line);
+	background-image: radial-gradient(var(--grid-dot) 1px, transparent 1px); background-size: 18px 18px;
+}
+.art svg { width: 100%; height: 100%; }
+.body { display: flex; flex-direction: column; flex: 1; gap: 14px; padding: 24px; }
+.title { display: flex; align-items: center; gap: 10px; }
+.title h3 { margin: 0; font-size: 1.35rem; letter-spacing: -0.02em; }
+.ver { padding: 1px 8px; border: 1px solid var(--line-strong); border-radius: 999px; font-size: 12px; color: var(--muted); }
+.card p { margin: 0; color: var(--muted); }
+.feat { margin: 0; padding: 0; list-style: none; display: grid; gap: 6px; font-size: 14px; }
+.feat li { display: flex; gap: 10px; align-items: baseline; }
+.feat li::before { content: "→"; color: var(--muted); }
+.actions { display: flex; flex-wrap: wrap; gap: 8px; margin-top: auto; padding-top: 8px; }
+.meta { font-size: 12px; color: var(--muted); }
+
+.note { margin-top: 24px; padding: 14px 18px; border: 1px solid var(--line-strong); border-radius: 12px; background: var(--bg-soft); font-size: 14px; color: var(--muted); }
+.note strong { color: var(--text); }
+
+/* Steps */
+.steps { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 280px), 1fr)); border: 1px solid var(--line); border-radius: 12px; overflow: hidden; }
+.step { padding: 28px; background: var(--bg); border-right: 1px solid var(--line); border-bottom: 1px solid var(--line); margin: 0 -1px -1px 0; }
+.step .n { display: block; margin-bottom: 16px; font-size: 13px; color: var(--muted); }
+.step h3 { margin: 0 0 6px; font-size: 1.1rem; letter-spacing: -0.01em; }
+.step p { margin: 0; font-size: 15px; color: var(--muted); }
+code { padding: 1px 6px; border: 1px solid var(--line); border-radius: 6px; background: var(--bg-soft); color: var(--text); font: 0.88em ui-monospace, "Geist Mono", SFMono-Regular, Menlo, monospace; }
+
+/* Support */
+.support { text-align: center; }
+.support .sub { margin-inline: auto; }
+
+footer { padding: 32px 0 56px; color: var(--muted); font-size: 14px; }
+footer .wrap { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 12px 24px; }
+footer a { text-decoration: none; }
+footer a:hover { color: var(--text); }
+
+@media (max-width: 640px) {
+	.links .hide-sm { display: none; }
+	.hero { padding: 64px 0 56px; }
+	section { padding: 56px 0; }
+}
+</style>
+</head>
+<body>
+
+<nav class="nav">
+	<div class="wrap">
+		<a class="brand" href="#"><i></i> Plugins for gSender</a>
+		<div class="links">
+			<a class="hide-sm" href="#plugins">Plugins</a>
+			<a class="hide-sm" href="#install">How to use</a>
+			<a href="https://github.com/FLandolt/gsender-plugins">GitHub</a>
+			<a class="btn small primary" href="https://buymeacoffee.com/flandolt" target="_blank" rel="noopener">&#9749; Buy me a coffee</a>
+		</div>
+	</div>
+</nav>
+
+<header class="hero">
+	<div class="wrap">
+		<span class="badge mono"><b></b> Free &amp; open source</span>
+		<h1>Plugins for <span>gSender.</span></h1>
+		<p class="lead">Small, free plugins that turn a few numbers into clean, GRBL-safe G-code, with a live 3D preview. No CAM software needed.</p>
+		<div class="cta">
+			<a class="btn primary" href="#plugins">Browse plugins</a>
+			<a class="btn" href="https://github.com/FLandolt/gsender-plugins">View on GitHub</a>
+		</div>
+	</div>
+</header>
+
+<main>
+	<section id="plugins">
+		<div class="wrap">
+			<p class="eyebrow mono">Plugins</p>
+			<h2>Pick a tool. Download it. Cut.</h2>
+			<p class="sub">Each plugin is a single zip. Try it in your browser first &mdash; in the demo, <em>Load to gSender</em> downloads the G-code instead.</p>
+			<div class="grid" id="grid"></div>
+			<div class="note"><strong>Always check before you cut.</strong> Look at the preview, run the job in the air first, and keep a hand on the stop button. You use these plugins at your own risk.</div>
+		</div>
+	</section>
+
+	<section id="install">
+		<div class="wrap">
+			<p class="eyebrow mono">How it works</p>
+			<h2>Three steps, no accounts.</h2>
+			<p class="sub">Plugins install straight into <a href="https://sienci.com/gsender/"><u>gSender</u></a>, the free CNC software by <a href="https://sienci.com/"><u>Sienci Labs</u></a>. Don't have it yet? Get it from <a href="https://github.com/Sienci-Labs/gsender/releases"><u>their releases page</u></a>.</p>
+			<div class="steps">
+				<div class="step"><span class="n mono">01</span><h3>Download</h3><p>Grab the zip of the plugin you want from the cards above.</p></div>
+				<div class="step"><span class="n mono">02</span><h3>Add it to gSender</h3><p>In gSender, install a plugin and select the zip you downloaded. There is no need to unzip it.</p></div>
+				<div class="step"><span class="n mono">03</span><h3>Open and cut</h3><p>Open the plugin from gSender's tools page, enter your numbers, check the preview and press <em>Load to gSender</em>.</p></div>
+			</div>
+		</div>
+	</section>
+
+	<section id="thanks">
+		<div class="wrap">
+			<p class="eyebrow mono">Thank you</p>
+			<h2>Big thanks to Sienci Labs.</h2>
+			<p class="sub">gSender is free, open-source CNC software made by <a href="https://sienci.com/"><u>Sienci Labs</u></a>, the team behind the LongMill. They also built the plugin SDK these tools run on. None of this would exist without their work, so go give them some love.</p>
+			<div class="cta" style="justify-content:flex-start">
+				<a class="btn" href="https://sienci.com/gsender/">Get gSender</a>
+				<a class="btn" href="https://github.com/Sienci-Labs/gsender">gSender on GitHub</a>
+				<a class="btn" href="https://sienci.com/">Visit Sienci Labs</a>
+			</div>
+		</div>
+	</section>
+
+	<section class="support">
+		<div class="wrap">
+			<h2>Found it useful?</h2>
+			<p class="sub">These plugins are free and always will be. If one saved you time, a coffee helps me build more.</p>
+			<a class="btn primary" href="https://buymeacoffee.com/flandolt" target="_blank" rel="noopener">&#9749; Buy me a coffee</a>
+		</div>
+	</section>
+</main>
+
+<footer>
+	<div class="wrap">
+		<span>Made for <a href="https://sienci.com/gsender/"><u>gSender</u></a>, the free CNC software by <a href="https://sienci.com/"><u>Sienci Labs</u></a>. Built on the <a href="https://github.com/Sienci-Labs/gsender/blob/dev/packages/plugin-sdk/README.md"><u>gSender Plugin SDK</u></a>. Not affiliated with Sienci Labs. Vibe-coded with AI (Claude), so always check the toolpath before you cut.</span>
+		<span><a href="https://github.com/FLandolt/gsender-plugins">Source</a> &middot; <a href="https://github.com/FLandolt/gsender-plugins/issues">Report an issue</a></span>
+	</div>
+</footer>
+
+<script>
+const REPO = "FLandolt/gsender-plugins";
+
+const ART = {
+	holes: `<svg viewBox="0 0 320 140" role="img" aria-label="Grid of round holes">
+		${[0,1,2].map(r => [0,1,2,3].map(c => `<g><circle cx="${70 + c*60}" cy="${32 + r*38}" r="14" fill="var(--bg)" stroke="var(--art)" stroke-width="1.5"/><circle cx="${70 + c*60}" cy="${32 + r*38}" r="6" fill="none" stroke="var(--art)" stroke-opacity=".4" stroke-width="1.2"/></g>`).join("")).join("")}
+		<circle cx="70" cy="32" r="3" fill="#ef4444"/></svg>`,
+	rect: `<svg viewBox="0 0 320 140" role="img" aria-label="Rounded rectangle with tabs">
+		<rect x="70" y="26" width="180" height="88" rx="22" fill="var(--bg)" stroke="var(--art)" stroke-width="1.5"/>
+		${[[160,26,28,0],[160,114,28,0],[70,70,0,28],[250,70,0,28]].map(([x,y,w,h]) => w ? `<rect x="${x-w/2}" y="${y-3.5}" width="${w}" height="7" rx="2" fill="var(--bg-soft)" stroke="var(--art)" stroke-width="1.2"/>` : `<rect x="${x-3.5}" y="${y-h/2}" width="7" height="${h}" rx="2" fill="var(--bg-soft)" stroke="var(--art)" stroke-width="1.2"/>`).join("")}
+		<circle cx="160" cy="70" r="3" fill="#ef4444"/></svg>`,
+	pocket: `<svg viewBox="0 0 320 140" role="img" aria-label="Pocket cleared in a spiral">
+		<rect x="70" y="26" width="180" height="88" rx="8" fill="var(--bg)" stroke="var(--art)" stroke-width="1.5"/>
+		<rect x="88" y="40" width="144" height="60" rx="5" fill="none" stroke="var(--art)" stroke-opacity=".5" stroke-width="1.2"/>
+		<rect x="108" y="52" width="104" height="36" rx="3" fill="none" stroke="var(--art)" stroke-opacity=".5" stroke-width="1.2"/>
+		<rect x="128" y="62" width="64" height="16" rx="2" fill="none" stroke="var(--art)" stroke-opacity=".5" stroke-width="1.2"/>
+		<circle cx="160" cy="70" r="3" fill="#ef4444"/></svg>`,
+	vcarve: `<svg viewBox="0 0 320 140" role="img" aria-label="A V-carved letter V with the path the bit follows">
+		<path d="M100 16 L133 16 L160 77 L187 16 L220 16 L172 124 L148 124 Z" fill="var(--bg)" stroke="var(--art)" stroke-width="1.5" stroke-linejoin="round"/>
+		<path d="M100 16 L122.5 30 L133 16 M122.5 30 L160 110 L197.5 30 M187 16 L197.5 30 L220 16 M148 124 L160 114 L172 124" fill="none" stroke="var(--art)" stroke-opacity=".5" stroke-width="1.2"/>
+		<circle cx="100" cy="16" r="3.5" fill="#ef4444"/></svg>`,
+	surface: `<svg viewBox="0 0 320 140" role="img" aria-label="Back-and-forth surfacing passes">
+		<rect x="70" y="26" width="180" height="88" fill="var(--bg)" stroke="var(--art)" stroke-width="1.5"/>
+		<polyline points="52,114 268,114 268,92 52,92 52,70 268,70 268,48 52,48 52,26 268,26" fill="none" stroke="var(--art)" stroke-opacity=".55" stroke-width="1.4"/>
+		<circle cx="52" cy="114" r="3" fill="#ef4444"/></svg>`
+};
+
+const PLUGINS = [
+	{
+		id: "hole-pattern",
+		name: "Hole Pattern",
+		art: "holes",
+		blurb: "Cut one hole or a whole grid of them. The bit spirals down level by level.",
+		features: [
+			"Any number of holes in X and Y",
+			"Slow, Medium and High speed presets",
+			"Zero on any corner hole, in mm or inches"
+		]
+	},
+	{
+		id: "cutout",
+		name: "Cutout",
+		art: "rect",
+		blurb: "Cut a rectangle or a circle inside or outside the line, ramping in so the bit never plunges.",
+		features: [
+			"Rectangle or circle, sharp or rounded corners",
+			"1–4 trapezoid or rectangular tabs per side",
+			"Climb or conventional, zero at the centre or any corner"
+		]
+	},
+	{
+		id: "surfacing",
+		name: "Surfacing",
+		art: "surface",
+		blurb: "Face a rectangular area with straight passes, from whichever corner and direction you choose.",
+		features: [
+			"Start in any corner, run along X or Y",
+			"Turn outside the material or inside along the edge",
+			"Back and forth, or lift and cut every pass the same way",
+			"Zero at any corner or the centre"
+		]
+	},
+	{
+		id: "pocket-cutout",
+		name: "Pocket Cutout",
+		art: "pocket",
+		blurb: "Clear a rectangular or round pocket. The bit spirals down, then spirals out with smooth lane changes between rings.",
+		features: [
+			"Rectangle with corner radius, or a circle",
+			"Spiral out from the middle, either direction",
+			"Zero at the centre or any corner"
+		]
+	},
+	{
+		id: "vcarve",
+		name: "V-Carve",
+		art: "vcarve",
+		blurb: "Carve text, SVG shapes and pictures with a V-bit: deep where the shape is wide, sharp at the corners.",
+		features: [
+			"Type text, load an SVG, or upload a logo",
+			"Tells you plainly what is wrong before it makes G-code",
+			"Works out the deepest safe cut, and never goes past it"
+		]
+	}
+];
+
+const esc = (s) => s.replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+
+const render = (releases) => {
+	document.getElementById("grid").innerHTML = PLUGINS.map(p => {
+		const rel = releases.find(r => r.tag_name.startsWith(p.id + "-v") && !r.draft);
+		const asset = rel && rel.assets.find(a => a.name.endsWith(".zip"));
+		const version = rel ? rel.tag_name.slice(p.id.length + 2) : null;
+		const dl = asset
+			? `<a class="btn primary" href="${esc(asset.browser_download_url)}">Download</a>`
+			: `<a class="btn primary" href="https://github.com/${REPO}/releases" aria-disabled="${rel ? "false" : "true"}">Releases</a>`;
+		const meta = rel ? `Updated ${new Date(rel.published_at).toLocaleDateString(undefined, { year: "numeric", month: "short", day: "numeric" })}` : "Release coming soon";
+		return `<article class="card">
+			<div class="art">${ART[p.art]}</div>
+			<div class="body">
+				<div class="title"><h3>${esc(p.name)}</h3>${version ? `<span class="ver mono">v${esc(version)}</span>` : ""}</div>
+				<p>${p.blurb}</p>
+				<ul class="feat">${p.features.map(f => `<li>${f}</li>`).join("")}</ul>
+				<div class="actions">${dl}<a class="btn" href="demos/${esc(p.id)}/" target="_blank" rel="noopener">Try live demo</a><a class="btn" href="https://github.com/${REPO}/tree/main/plugins/${p.id}">Docs &amp; source</a></div>
+				<span class="meta mono">${meta}</span>
+			</div>
+		</article>`;
+	}).join("");
+};
+
+render([]);
+fetch(`https://api.github.com/repos/${REPO}/releases?per_page=50`)
+	.then(r => r.ok ? r.json() : Promise.reject(r.status))
+	.then(render)
+	.catch(() => { /* keep the static cards; links still point to the releases page */ });
+</script>
+</body>
+</html>

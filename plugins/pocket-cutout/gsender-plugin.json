@@ -1,0 +1,33 @@
+{
+	"id": "io.github.flandolt.pocket-cutout",
+	"name": "Pocket Cutout",
+	"version": "0.1.0",
+	"engine": ">=1.6.0",
+	"ui": {
+		"entry": "ui/index.html",
+		"contributions": [
+			{
+				"slot": "tools-page",
+				"route": "pocket-cutout",
+				"label": "Pocket Cutout"
+			}
+		]
+	},
+	"permissions": [
+		"workspace:read",
+		"visualizer:load"
+	],
+	"capabilities": {
+		"requestTypes": [
+			"workspace:get:state",
+			"gcode:load:to:visualizer"
+		],
+		"topics": [
+			"workspace"
+		],
+		"allowedFunctions": [
+			"useWorkspaceState",
+			"gcode"
+		]
+	}
+}

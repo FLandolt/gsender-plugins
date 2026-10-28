@@ -1,0 +1,40 @@
+{
+  "name": "vcarve",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "description": "gSender plugin that V-carves text, SVG shapes and images with a V-bit",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "build:demo": "vite build --mode demo",
+    "clean": "rm -rf ui",
+    "preview": "vite preview",
+    "check": "tsc --noEmit",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "@sienci/gsender-plugin-sdk": "^0.2.1",
+    "@sienci/gviewer": "^0.1.28",
+    "delaunator": "^5.1.0",
+    "opentype.js": "^1.3.4",
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0",
+    "svgpath": "^2.6.0",
+    "three": "^0.168.0"
+  },
+  "devDependencies": {
+    "@fontsource/bebas-neue": "^5.2.0",
+    "@fontsource/roboto": "^5.2.0",
+    "@fontsource/roboto-slab": "^5.2.0",
+    "@tailwindcss/vite": "^4.0.0",
+    "@types/opentype.js": "^1.3.8",
+    "@types/react": "^19.0.0",
+    "@types/react-dom": "^19.0.0",
+    "@vitejs/plugin-react": "^4.3.4",
+    "tailwindcss": "^4.0.0",
+    "typescript": "^5.7.2",
+    "vite": "^6.0.0",
+    "vitest": "^2.1.8"
+  }
+}
