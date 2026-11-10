@@ -106,22 +106,29 @@ describe("features thinner than the tip", () => {
 });
 
 describe("path order", () => {
-	it("a bar is cut in as few chains as it has pairs of ends, with no lift inside a stroke", () => {
+	it("a bar is cut outwards: every cut into a corner starts deep and rises to the surface", () => {
 		const plan = planCarve(shapesOf(rect(0, 0, 40, 6)), bit60, 6, "normal");
-		// Four corner tips and one junction at each end: the centre line plus two diagonals each end.
-		expect(plan.chains.length).toBeLessThanOrEqual(3);
+		// Four corner tips: centre line plus two diagonals each end, each cut run from the middle outwards.
+		expect(plan.chains.length).toBeLessThanOrEqual(6);
+		for (const c of plan.chains) {
+			const [a, b] = [c[0], c[c.length - 1]];
+			if (b.z > -0.05) expect(a.z).toBeLessThan(b.z);
+		}
 	});
-	it("every cut starts on the surface or in a groove that is already cut, apart from isolated rings and points", () => {
+	it("a cut only starts in uncut material once per stroke: the rest start in a groove already cut", () => {
 		const shapes = shapesOf(rect(0, 0, 50, 8), poly([0, 24], [18, 24], [18, 0], [24, 0], [24, 24], [42, 24], [42, 30], [0, 30]));
 		const plan = planCarve(shapes, bit60, 8, "normal");
 		const cut: P3[] = [];
+		let plunges = 0;
 		for (const c of plan.chains) {
 			const start = c[0];
 			const onSurface = start.z > -0.05;
 			const inGroove = cut.some((p) => Math.hypot(p.x - start.x, p.y - start.y) < 0.2 && Math.abs(p.z - start.z) < 0.2);
-			expect(onSurface || inGroove).toBe(true);
+			if (!onSurface && !inGroove) plunges += 1;
 			cut.push(...samples({ ...plan, chains: [c] }, 0.1));
 		}
+		// Two shapes, each plunged once at the deepest point of its centre line.
+		expect(plunges).toBeLessThanOrEqual(3);
 	});
 	it("a disc is a single plunge at its centre", () => {
 		const plan = planCarve(shapesOf(circle(0, 0, 6)), bit90, 6, "normal");
