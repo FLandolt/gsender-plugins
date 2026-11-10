@@ -56,6 +56,8 @@ type Chain = {
 	nodeKeys: string[];
 	startKey: string | null;
 	endKey: string | null;
+	/** Cut only in the stored direction: from the deep end out towards the shallow one. */
+	outward?: boolean;
 };
 
 /** Splits an axis into branches between junctions and ends. */
@@ -237,18 +239,39 @@ const planShape = (shape: Shape, shapeIndex: number, bit: Bit, maxDepth: number,
 			const last = pts.length - 1 - [...pts].reverse().findIndex((p) => p.z < -1e-9);
 			// Keep the point at the surface just before the cut begins: that is where it tapers to a point.
 			pts = pts.slice(Math.max(0, first - 1), Math.min(pts.length, last + 2));
-			const keep = new Set<number>();
+			// Cut from the deepest point outwards, so the bit rises into corners and ends instead of
+			// diving in from them: split at the deepest point and run each half away from it.
+			let peak = 0;
 			pts.forEach((p, i) => {
-				if (deg[p.id] !== 2) keep.add(i);
+				if (p.z < pts[peak].z - 1e-9) peak = i;
 			});
-			pts = simplifyOpen3(pts, tol, keep);
-			const nodes = pts.filter((p) => deg[p.id] !== 2).map((p) => keyOf(p.id));
-			out.push({
-				pts: pts.map(({ x, y, z }) => ({ x, y, z })),
-				nodeKeys: nodes,
-				startKey: deg[pts[0].id] !== 2 && deg[pts[0].id] !== 1 ? keyOf(pts[0].id) : null,
-				endKey: deg[pts[pts.length - 1].id] !== 2 && deg[pts[pts.length - 1].id] !== 1 ? keyOf(pts[pts.length - 1].id) : null,
-			});
+			const run = pts.filter((p) => p.z <= pts[peak].z + 1e-9);
+			peak = pts.indexOf(run[Math.floor(run.length / 2)]);
+			const halves: (P3 & { id: number })[][] = [];
+			// Level cuts (a ring) have no direction to speak of and stay as one piece.
+			const deep = (i: number) => pts[i].z <= pts[peak].z + 0.05;
+			if (deep(0)) halves.push(pts);
+			else if (deep(pts.length - 1)) halves.push([...pts].reverse());
+			else halves.push(pts.slice(0, peak + 1).reverse(), pts.slice(peak));
+			const split = halves.length > 1;
+			for (const half of halves) {
+				const keep = new Set<number>();
+				half.forEach((p, i) => {
+					if (deg[p.id] !== 2) keep.add(i);
+				});
+				keep.add(0);
+				const hp = simplifyOpen3(half, tol, keep);
+				const peakKey = split ? `${keyOf(hp[0].id)}:peak` : null;
+				const nodes = hp.filter((p) => deg[p.id] !== 2).map((p) => keyOf(p.id));
+				if (peakKey) nodes.push(peakKey);
+				out.push({
+					pts: hp.map(({ x, y, z }) => ({ x, y, z })),
+					nodeKeys: nodes,
+					startKey: peakKey ?? (deg[hp[0].id] !== 2 && deg[hp[0].id] !== 1 ? keyOf(hp[0].id) : null),
+					endKey: deg[hp[hp.length - 1].id] !== 2 && deg[hp[hp.length - 1].id] !== 1 ? keyOf(hp[hp.length - 1].id) : null,
+					outward: hp[0].z < hp[hp.length - 1].z - 0.05,
+				});
+			}
 		}
 		return out;
 	};
@@ -274,11 +297,11 @@ const orderChains = (chains: Chain[]): P3[][] => {
 	while (remaining.length) {
 		let best = -1, bestRev = false, bestCost = Infinity, bestFree = false;
 		remaining.forEach((c, i) => {
-			for (const rev of [false, true]) {
+			for (const rev of c.outward ? [false] : [false, true]) {
 				const p = rev ? c.pts[c.pts.length - 1] : c.pts[0];
 				const isFree = free(c, rev);
-				// Free starts always beat plunging into material; among equals the nearest wins.
-				const cost = Math.hypot(p.x - at.x, p.y - at.y) + (isFree ? 0 : 1e6 + -p.z * 1e3);
+				// Free starts always beat plunging into material; a plunge is best made where the most other cuts join, so they can start from it; among equals the nearest wins.
+				const cost = Math.hypot(p.x - at.x, p.y - at.y) + (isFree ? 0 : 1e6 + -p.z * 1e3 - c.nodeKeys.length * 1e4);
 				if (cost < bestCost) {
 					bestCost = cost;
 					best = i;

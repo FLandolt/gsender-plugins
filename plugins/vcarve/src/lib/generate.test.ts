@@ -68,8 +68,8 @@ describe("G-code", () => {
 
 	it("cuts start by ramping in from the surface, or plunge at the plunge rate", () => {
 		const { gcode } = make([rect(0, 0, 40, 6)]);
-		// A bar's cuts all start at a sharp corner at the surface.
-		expect(gcode).toMatch(/^G1 Z0 F300$/m);
+		// A bar is plunged once, in the middle; its other cuts start in the groove that makes.
+		expect(gcode).toMatch(/^G1 Z-[\d.]+ F300$/m);
 		expect(gcode).toMatch(/^G0 Z1$/m);
 	});
 
