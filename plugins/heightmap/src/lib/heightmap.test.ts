@@ -22,7 +22,7 @@ const job = (patch: Partial<Params> = {}): Params => ({ ...defaultParams(), dept
 const options = (p: Params, size: { width: number; height: number }): PlanOptions => ({ ...p, ...size });
 
 describe("levels", () => {
-	const grid = (values: number[]): Grid => ({ w: values.length, h: 1, cell: 1, v: Float32Array.from(values) });
+	const grid = (values: number[]): Grid => ({ w: values.length, h: 1, cell: 1, x0: 0, y0: 0, v: Float32Array.from(values) });
 	it("white stays at the top, black goes to the bottom, grey in between", () => {
 		expect([...levelMap(grid([255, 128, 0]), 2, false)]).toEqual([0, 1, 2]);
 	});
@@ -143,11 +143,11 @@ describe("check", () => {
 
 describe("contrast", () => {
 	it("stretches a picture that never reaches black or white over every level", () => {
-		const g: Grid = { w: 3, h: 1, cell: 1, v: Float32Array.from([200, 150, 100]) };
+		const g: Grid = { w: 3, h: 1, cell: 1, x0: 0, y0: 0, v: Float32Array.from([200, 150, 100]) };
 		expect([...levelMap(g, 2, false)]).toEqual([0, 1, 2]);
 	});
 	it("leaves a flat picture at the top", () => {
-		const g: Grid = { w: 3, h: 1, cell: 1, v: Float32Array.from([90, 90, 90]) };
+		const g: Grid = { w: 3, h: 1, cell: 1, x0: 0, y0: 0, v: Float32Array.from([90, 90, 90]) };
 		expect([...levelMap(g, 2, false)]).toEqual([0, 0, 0]);
 	});
 });

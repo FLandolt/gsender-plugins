@@ -36,3 +36,9 @@ npm run dev     # standalone with a mocked gSender bridge
 npm test
 npm run build   # produces ui/, which gSender serves
 ```
+
+## Picture shape
+
+Pick **Picture** to clear the shape in an image as a pocket. Upload the picture, move the **threshold** until the preview shows the shape in black (switch on **Invert** if the shape is the light part) and set its real size. Holes in the shape stay standing as islands.
+
+A picture is cleared with back-and-forth rows wherever the whole bit fits, then once around each outline for clean walls. Each level ramps in along its first row, so the bit doesn't plunge straight down. Parts of the shape narrower than the bit stay uncut, and the plugin warns when that is more than a sliver. X0 Y0 is a corner or the centre of the whole picture, as in Height Map.

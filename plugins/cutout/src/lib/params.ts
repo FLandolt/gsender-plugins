@@ -20,8 +20,8 @@ export type Direction = "climb" | "conventional";
 /** Where X0 Y0 sits relative to the finished rectangle: a corner or the centre. */
 export type OriginMode = Position;
 
-/** The outline that is cut: a rectangle (optionally rounded) or a circle. */
-export type Shape = "rectangle" | "circle";
+/** The outline that is cut: a rectangle (optionally rounded), a circle, or the outline of a shape in a picture. */
+export type Shape = "rectangle" | "circle" | "picture";
 
 export type Params = {
 	units: Units;
@@ -33,6 +33,13 @@ export type Params = {
 	diameter: number;
 	/** Radius of all four corners; 0 gives sharp corners. */
 	cornerRadius: number;
+	/** Picture: grey level below which a pixel is shape (above it when inverted). */
+	threshold: number;
+	/** Picture: the light areas are the shape. */
+	invert: boolean;
+	/** Picture: its real size, set by one side; the other follows its shape. */
+	sizeBy: "width" | "height";
+	size: number;
 	mode: CutMode;
 	direction: Direction;
 	origin: OriginMode;
@@ -66,6 +73,10 @@ export const defaultParams = (): Params => ({
 	height: 40,
 	diameter: 50,
 	cornerRadius: 0,
+	threshold: 128,
+	invert: false,
+	sizeBy: "width",
+	size: 100,
 	mode: "hole",
 	direction: "climb",
 	origin: "center",
@@ -91,21 +102,24 @@ export const check = (p: Params): Problems => {
 
 	if (!(p.toolDiameter > 0)) errors.push("Tool diameter must be greater than 0.");
 	const round = p.shape === "circle";
-	if (round) {
+	const picture = p.shape === "picture";
+	if (picture) {
+		if (!(p.size > 0)) errors.push(`The picture ${p.sizeBy} must be greater than 0.`);
+	} else if (round) {
 		if (!(p.diameter > 0)) errors.push("Diameter must be greater than 0.");
 	} else if (!(p.width > 0) || !(p.height > 0)) errors.push("Width and height must be greater than 0.");
 	if (!(p.depth > 0)) errors.push(p.depth === 0 ? "Set the cut depth: the thickness of your stock plus a little." : "Cut depth must be greater than 0.");
 	if (!(p.stepdown > 0)) errors.push("Stepdown must be greater than 0.");
 	if (!(p.feedrate > 0) || !(p.plungeRate > 0)) errors.push("Feed and plunge rates must be greater than 0.");
-	if (!round) {
+	if (!round && !picture) {
 		if (p.cornerRadius < 0) errors.push("Corner radius cannot be negative.");
 		if (p.cornerRadius > Math.min(p.width, p.height) / 2 + 1e-9)
 			errors.push("Corner radius is larger than half the shorter side.");
 	}
-	if (p.mode === "hole" && (round ? p.diameter <= p.toolDiameter : p.width <= p.toolDiameter || p.height <= p.toolDiameter))
+	if (!picture && p.mode === "hole" && (round ? p.diameter <= p.toolDiameter : p.width <= p.toolDiameter || p.height <= p.toolDiameter))
 		errors.push("The inside cut is not wider than the tool.");
 
-	if (!round && p.mode === "hole" && p.cornerRadius < rt - 1e-9)
+	if (!round && !picture && p.mode === "hole" && p.cornerRadius < rt - 1e-9)
 		warnings.push(
 			p.cornerRadius === 0
 				? "A round bit can't cut sharp inside corners — they will have the tool's radius."
@@ -113,7 +127,7 @@ export const check = (p: Params): Problems => {
 		);
 
 	if (p.tabs.enabled) {
-		if (p.tabs.perSide < 1 || !Number.isInteger(p.tabs.perSide)) errors.push(round ? "The number of tabs must be a whole number of at least 1." : "Tabs per side must be a whole number of at least 1.");
+		if (p.tabs.perSide < 1 || !Number.isInteger(p.tabs.perSide)) errors.push(round || picture ? "The number of tabs must be a whole number of at least 1." : "Tabs per side must be a whole number of at least 1.");
 		if (p.tabs.length <= 0 || p.tabs.height <= 0) errors.push("Tab length and height must be greater than 0.");
 		if (p.depth > 0 && p.tabs.height >= p.depth) warnings.push("Tab height is as tall as the cut — nothing would be cut through.");
 	}

@@ -8,7 +8,8 @@ import type { Units } from "@shared/units";
 
 export type { Units };
 
-export type Shape = "rectangle" | "circle";
+/** `picture`: the shape in an uploaded image, cleared with rows and an outline pass. */
+export type Shape = "rectangle" | "circle" | "picture";
 
 /** Which way the spiral turns, seen from above. Clockwise is climb milling inside a pocket. */
 export type Rotation = "cw" | "ccw";
@@ -23,6 +24,13 @@ export type Params = {
 	cornerRadius: number;
 	/** Finished pocket diameter (circle). */
 	diameter: number;
+	/** Picture: grey level below which a pixel is shape (above it when inverted). */
+	threshold: number;
+	/** Picture: the light areas are the shape. */
+	invert: boolean;
+	/** Picture: its real size, set by one side; the other follows its shape. */
+	sizeBy: "width" | "height";
+	size: number;
 	toolDiameter: number;
 	/** Pocket depth below the stock top (Z0), in mm. */
 	depth: number;
@@ -53,6 +61,10 @@ export const defaultParams = (): Params => ({
 	height: 40,
 	cornerRadius: 0,
 	diameter: 40,
+	threshold: 128,
+	invert: false,
+	sizeBy: "width",
+	size: 100,
 	toolDiameter: 4,
 	// No depth until one is entered: it depends on the job, so it can't run on a guess.
 	depth: 0,
@@ -77,7 +89,9 @@ export const check = (p: Params): Problems => {
 	const round = p.shape === "circle";
 
 	if (!(p.toolDiameter > 0)) errors.push("Tool diameter must be greater than 0.");
-	if (round) {
+	if (p.shape === "picture") {
+		if (!(p.size > 0)) errors.push(`The picture ${p.sizeBy} must be greater than 0.`);
+	} else if (round) {
 		if (!(p.diameter > 0)) errors.push("Diameter must be greater than 0.");
 		else if (p.diameter <= p.toolDiameter + 1e-6) errors.push("The pocket must be wider than the tool. For a hole the size of the tool, use Hole Pattern.");
 	} else {
@@ -91,7 +105,7 @@ export const check = (p: Params): Problems => {
 	if (!(p.stepover > 0 && p.stepover <= 1)) errors.push("Stepover must be between 0 and 1.");
 	if (!(p.feedrate > 0) || !(p.plungeRate > 0)) errors.push("Feed and plunge rates must be greater than 0.");
 
-	if (!round && p.cornerRadius < rt - 1e-9)
+	if (p.shape === "rectangle" && p.cornerRadius < rt - 1e-9)
 		warnings.push(
 			p.cornerRadius === 0
 				? "A round bit can't cut sharp corners, so they will have the tool's radius."

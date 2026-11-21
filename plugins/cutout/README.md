@@ -30,3 +30,11 @@ npm run dev --workspace plugins/cutout     # standalone, mocked gSender
 npm test --workspace plugins/cutout
 npm run build --workspace plugins/cutout   # → plugins/cutout/ui
 ```
+
+## Picture shape
+
+Pick **Picture** as the shape to cut out the outline of a shape in an image. Upload the picture (colour works: it is turned to black and white), move the **threshold** until the black-and-white preview shows the shape in black, and switch on **Invert** if the shape is the light part. Set the picture's real size by width or height.
+
+The bit runs one bit radius outside the shape (**Outside the line**, the shape is kept) or inside it (**Inside the line**, the shape is removed). Only the outer outlines are cut, so holes inside the shape stay and it comes out in one piece; separate shapes are cut one after another, each with its own tabs (**Tabs per outline**, spread evenly).
+
+X0 Y0 is a corner or the centre of the **whole picture**. Use the same picture, size and zero as in the Height Map plugin, and the cut lines up with the carving, so you can cut it free.

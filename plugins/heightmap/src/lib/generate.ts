@@ -4,11 +4,11 @@
  * Only G0/G1 straight moves (no arcs, no canned cycles). Work zero: X0 Y0 is the chosen corner of
  * the picture's rectangle, or its centre; Z0 is the top of the stock.
  *
- * Passes go from shallow to deep. Each stroke is cut at its pass depth: the bit travels to it at a
- * small height above the stock (nothing is above Z0), drops quickly to just above the floor the last
- * pass left, plunges at the plunge rate and cuts along the stroke.
+ * Passes go from shallow to deep (see the shared clearing writer): the bit travels at a small height
+ * above the stock, drops to just above the floor the last pass left and ramps in along the stroke.
  */
 
+import { writeClearing } from "@shared/clearing";
 import { comment, fmt } from "@shared/gcode";
 import { originOffset, POSITION_NAMES } from "@shared/position";
 import { MM_PER_INCH } from "@shared/units";
@@ -23,8 +23,6 @@ export const generateGcode = (p: Params, plan: Plan, description: string): strin
 	const c = (v: number) => fmt(v * scale, dec);
 	const f = (v: number) => fmt(v * scale, inch ? 2 : 0);
 	const o = originOffset(p.origin, plan.width, plan.height);
-	const xy = (pt: { x: number; y: number }) => `X${c(pt.x - o.x)} Y${c(pt.y - o.y)}`;
-	const clearance = Math.min(1, p.safeZ);
 	const levels = levelDepths(p.depth, p.steps);
 
 	const out: string[] = [];
@@ -41,18 +39,14 @@ export const generateGcode = (p: Params, plan: Plan, description: string): strin
 	if (p.spindleDwell > 0) out.push(`G4 P${fmt(p.spindleDwell, 2)}`);
 	out.push(`G0 Z${c(p.safeZ)}`);
 
-	let floor = 0; // depth the previous pass reached
-	plan.passes.forEach((pass, pi) => {
-		if (pass.strokes.length === 0) return;
-		out.push(comment(`Pass ${pi + 1} of ${plan.passes.length}, Z${c(-pass.depth)}`));
-		for (const stroke of pass.strokes) {
-			out.push(`G0 Z${c(clearance)}`);
-			out.push(`G0 ${xy(stroke[0])}`);
-			out.push(`G0 Z${c(Math.min(clearance, -floor + 0.5))}`);
-			out.push(`G1 Z${c(-pass.depth)} F${f(p.plungeRate)}`);
-			stroke.slice(1).forEach((pt, i) => out.push(`G1 ${xy(pt)}${i === 0 ? ` F${f(p.feedrate)}` : ""}`));
-		}
-		floor = pass.depth;
+	writeClearing(out, plan.passes, {
+		c,
+		f,
+		toMachine: (pt) => ({ x: pt.x - o.x, y: pt.y - o.y }),
+		clearance: Math.min(1, p.safeZ),
+		feedrate: p.feedrate,
+		plungeRate: p.plungeRate,
+		toolDiameter: p.toolDiameter,
 	});
 
 	out.push(`G0 Z${c(p.safeZ)}`, "M5", "M30");

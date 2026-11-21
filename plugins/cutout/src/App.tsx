@@ -5,7 +5,9 @@ import { lazy, Suspense, useDeferredValue, useMemo, useState } from "react";
 import { matchFeedPreset } from "@shared/feeds";
 import { isStandalone } from "@shared/mockBridge";
 import { formatMinutes, jobStats } from "@shared/stats";
-import { ArcIcon, CircleIcon, LineIcon, RectIcon } from "@shared/icons";
+import { ArcIcon, CircleIcon, ImageIcon, LineIcon, RectIcon } from "@shared/icons";
+import { readPicture, toGray, type Gray } from "@shared/picture";
+import PictureInput from "@shared/PictureInput";
 import PositionPicker from "@shared/PositionPicker";
 import { CutSection, passCount, TabDiagram } from "@shared/diagrams";
 import PluginLayout, { PreviewPlaceholder, primaryBtn, StatRow, type Step } from "@shared/PluginLayout";
@@ -15,6 +17,7 @@ import { type Units, unitsScale } from "@shared/units";
 
 import { generateGcode } from "./lib/generate";
 import { check, defaultParams, type Params } from "./lib/params";
+import { pictureOutlines } from "./lib/picture";
 
 const ToolpathView = lazy(() => import("@shared/ToolpathView"));
 
@@ -28,14 +31,45 @@ const App = () => {
 	const [base, setBase] = useState<Params>(defaultParams);
 	const [status, setStatus] = useState<{ ok: boolean; text: string } | null>(null);
 	const [busy, setBusy] = useState(false);
+	const [picture, setPicture] = useState<{ name: string; gray: Gray } | null>(null);
+	const [pictureError, setPictureError] = useState<string | null>(null);
+	const onPicture = async (file: File) => {
+		try {
+			setPicture({ name: file.name, gray: toGray(await readPicture(file)) });
+			setPictureError(null);
+		} catch {
+			setPictureError("Couldn't read that picture. Try a PNG or JPG.");
+		}
+	};
 
 	// gSender owns the unit system; mirror it rather than letting the user pick.
 	const params = useMemo<Params>(() => ({ ...base, units }), [base, units]);
 	const problems = useMemo(() => check(params), [params]);
+	const isPicture = params.shape === "picture";
+	// Tracing a picture is the heavy part: while a slider moves, keep the screen responsive and catch up after.
+	const settled = useDeferredValue(params);
+	const outlines = useMemo(
+		() => (settled.shape === "picture" && picture && settled.size > 0 && settled.toolDiameter > 0 ? pictureOutlines(settled, picture.gray) : null),
+		[settled, picture],
+	);
+	const pictureProblems = !isPicture
+		? []
+		: pictureError
+			? [pictureError]
+			: !picture
+				? ["Choose a picture to cut out."]
+				: outlines?.empty
+					? ["Nothing in the picture counts as shape. Move the threshold or switch Invert."]
+					: outlines && outlines.rings.length === 0
+						? ["The bit doesn't fit inside the shape. Use a smaller bit or cut outside the line."]
+						: [];
 	const result = useMemo(
 		// An emptied box blocks the job even where no other check covers it.
-		() => (problems.errors.length || hasBlank(params) ? null : generateGcode(params)),
-		[params, problems],
+		() =>
+			problems.errors.length || hasBlank(params) || pictureProblems.length || (isPicture && (!outlines || settled !== params))
+				? null
+				: generateGcode(params, outlines ? { ...outlines, name: picture?.name } : undefined),
+		[params, problems, outlines, settled, isPicture, picture, pictureProblems.length],
 	);
 	const code = result?.gcode ?? "";
 	const warnings = [...problems.warnings, ...(result?.warnings ?? [])];
@@ -55,8 +89,9 @@ const App = () => {
 	const send = async () => {
 		setBusy(true);
 		try {
-			const name =
-				params.shape === "circle"
+			const name = isPicture
+				? `cutout-${(picture?.name ?? "picture").replace(/\.[^.]+$/, "").replace(/[^a-z0-9]+/gi, "-").toLowerCase()}.nc`
+				: params.shape === "circle"
 					? `cutout-d${Number(params.diameter.toFixed(1))}.nc`
 					: `cutout-${Number(params.width.toFixed(1))}x${Number(params.height.toFixed(1))}.nc`;
 			await gcode.loadToVisualizer(code, name);
@@ -73,7 +108,8 @@ const App = () => {
 
 	const round = params.shape === "circle";
 	const blank = hasBlank(params);
-	const errors = blank ? [BLANK_MESSAGE, ...problems.errors] : problems.errors;
+	const errors = [...(blank ? [BLANK_MESSAGE] : []), ...pictureProblems, ...problems.errors];
+	const pictureSize = outlines ? { width: outlines.width, height: outlines.height } : null;
 	const has = (...keys: (keyof Params)[]) => keys.some((k) => !(Number(params[k]) > 0));
 	const tabsBad = params.tabs.enabled && (!(params.tabs.length > 0) || !(params.tabs.height > 0) || !(params.tabs.perSide >= 1) || (params.depth > 0 && params.tabs.height >= params.depth));
 
@@ -81,22 +117,25 @@ const App = () => {
 		{
 			id: "shape",
 			label: "Shape",
-			hint: "What gets cut out, and where X0 Y0 is. Z0 is the top of the stock.",
-			issue: round ? has("diameter") : has("width", "height") || params.cornerRadius > Math.min(params.width, params.height) / 2 + 1e-9,
+			hint: "What gets cut out: a rectangle, a circle or the outline of a shape in a picture. And where X0 Y0 is; Z0 is the top of the stock.",
+			issue: isPicture ? pictureProblems.length > 0 || has("size") : round ? has("diameter") : has("width", "height") || params.cornerRadius > Math.min(params.width, params.height) / 2 + 1e-9,
 			content: (
 				<>
 					<Segmented
 						value={params.shape}
 						onChange={(shape) =>
-							// A circle wants a few tabs around it; a rectangle one per side.
-							setBase((b) => ({ ...b, shape, tabs: { ...b.tabs, perSide: shape === "circle" ? 4 : 1 } }))
+							// A circle or picture wants a few tabs around it; a rectangle one per side.
+							setBase((b) => ({ ...b, shape, tabs: { ...b.tabs, perSide: shape === "rectangle" ? 1 : 4 } }))
 						}
 						options={[
 							{ value: "rectangle", label: "Rectangle", icon: <RectIcon /> },
 							{ value: "circle", label: "Circle", icon: <CircleIcon /> },
+							{ value: "picture", label: "Picture", icon: <ImageIcon /> },
 						]}
 					/>
-					{round ? (
+					{isPicture ? (
+						<PictureInput picture={picture} onFile={onPicture} value={params} onChange={update} units={units} />
+					) : round ? (
 						len("Diameter", params.diameter, (v) => update({ diameter: v }))
 					) : (
 						<div className="grid grid-cols-2 gap-3">
@@ -137,8 +176,8 @@ const App = () => {
 					/>
 					<Hint>
 						{params.mode === "hole"
-							? `Inside: the bit runs inside the line and the ${params.shape} is removed, the material around it stays.`
-							: `Outside: the bit runs outside the line and the ${params.shape} is kept.`}
+							? `Inside: the bit runs inside the line and the ${isPicture ? "shape" : params.shape} is removed, the material around it stays.`
+							: `Outside: the bit runs outside the line and the ${isPicture ? "shape" : params.shape} is kept.`}
 					</Hint>
 					<div className="grid grid-cols-2 gap-3">
 						{len("Bit diameter", params.toolDiameter, (v) => update({ toolDiameter: v }), true)}
@@ -153,7 +192,7 @@ const App = () => {
 						safeZ={params.safeZ}
 						tabHeight={params.tabs.enabled ? params.tabs.height : undefined}
 						line={params.mode === "hole" ? "right" : "left"}
-						leftLabel={params.mode === "hole" ? "waste" : round ? "circle (kept)" : "part (kept)"}
+						leftLabel={params.mode === "hole" ? "waste" : round ? "circle (kept)" : isPicture ? "shape (kept)" : "part (kept)"}
 						rightLabel={params.mode === "hole" ? "kept" : "waste"}
 					/>
 					<Hint>The red dashed line is the outline you entered; the bit stays on the waste side of it.</Hint>
@@ -178,7 +217,7 @@ const App = () => {
 									{ value: "rectangular", label: "Rectangular" },
 								]}
 							/>
-							<Stepper label={round ? "Number of tabs" : "Tabs per side"} value={params.tabs.perSide} max={round ? 8 : 4} onChange={(perSide) => updateTabs({ perSide })} />
+							<Stepper label={round ? "Number of tabs" : isPicture ? "Tabs per outline" : "Tabs per side"} value={params.tabs.perSide} max={isPicture ? 12 : round ? 8 : 4} onChange={(perSide) => updateTabs({ perSide })} />
 							<div className="grid grid-cols-2 gap-3">
 								{len(params.tabs.shape === "trapezoid" ? "Tab length (base)" : "Tab length", params.tabs.length, (length) => updateTabs({ length }), true)}
 								{len("Tab height", params.tabs.height, (height) => updateTabs({ height }), true)}
@@ -244,11 +283,11 @@ const App = () => {
 				<>
 					<Summary
 						rows={[
-							["Shape", round ? `Circle Ø ${lengthLabel(params.diameter, units)}` : `${lengthLabel(params.width, units)} × ${lengthLabel(params.height, units)}${params.cornerRadius > 0 ? `, r ${lengthLabel(params.cornerRadius, units)}` : ""}`],
+							["Shape", isPicture ? `${picture?.name ?? "Picture"}${outlines ? `, ${outlines.rings.length} outline${outlines.rings.length === 1 ? "" : "s"}` : ""}` : round ? `Circle Ø ${lengthLabel(params.diameter, units)}` : `${lengthLabel(params.width, units)} × ${lengthLabel(params.height, units)}${params.cornerRadius > 0 ? `, r ${lengthLabel(params.cornerRadius, units)}` : ""}`],
 							["Cut", params.mode === "hole" ? "Inside the line" : "Outside the line"],
 							["Bit", `Ø ${lengthLabel(params.toolDiameter, units)}`],
 							["Depth", `${lengthLabel(params.depth, units)}${passCount(params.depth, params.stepdown) ? ` in ${passCount(params.depth, params.stepdown)} passes` : ""}`],
-							["Tabs", params.tabs.enabled ? `${round ? params.tabs.perSide : params.tabs.perSide * 4} × ${params.tabs.shape}, ${lengthLabel(params.tabs.length, units)} × ${lengthLabel(params.tabs.height, units)}` : "None"],
+							["Tabs", params.tabs.enabled ? `${round ? params.tabs.perSide : isPicture ? `${params.tabs.perSide} per outline` : params.tabs.perSide * 4} × ${params.tabs.shape}, ${lengthLabel(params.tabs.length, units)} × ${lengthLabel(params.tabs.height, units)}` : "None"],
 							["Zero", POSITION_NAMES[params.origin]],
 							["Feed / plunge", `${shown(params.feedrate)} / ${shown(params.plungeRate)} ${units}/min`],
 							["Spindle", `${params.spindleRpm} RPM`],
@@ -264,14 +303,14 @@ const App = () => {
 	return (
 		<PluginLayout
 			title="Cutout"
-			intro="Cuts a rectangle or circle out, with holding tabs. Z0 = top of stock."
+			intro="Cuts a rectangle, circle or picture outline out, with holding tabs. Z0 = top of stock."
 			steps={steps}
 			code={code}
 			status={status}
 			stats={
 				<StatRow
 					items={[
-						["Size", round ? `Ø ${shown(params.diameter)} ${units}` : `${shown(params.width)} × ${shown(params.height)} ${units}`],
+						["Size", isPicture ? (pictureSize ? `${lengthLabel(pictureSize.width, units).replace(` ${units}`, "")} × ${lengthLabel(pictureSize.height, units)}` : "–") : round ? `Ø ${shown(params.diameter)} ${units}` : `${shown(params.width)} × ${shown(params.height)} ${units}`],
 						["Est. time", stats ? formatMinutes(stats.minutes) : "–"],
 						["G-code lines", stats ? stats.lines.toLocaleString() : "–"],
 					]}

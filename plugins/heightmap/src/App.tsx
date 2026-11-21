@@ -14,7 +14,8 @@ import { type Units, unitsScale } from "@shared/units";
 
 import DepthMap from "./DepthMap";
 import { generateGcode } from "./lib/generate";
-import { pictureSize, planCut, shrink, toGray, type Gray, type RawImage } from "./lib/heightmap";
+import { pictureSize, planCut, shrink, toGray, type Gray } from "./lib/heightmap";
+import { readPicture } from "@shared/picture";
 import { check, defaultParams, levelDepths, MAX_STEPS, type Params } from "./lib/params";
 import Terraces from "./Terraces";
 
@@ -22,22 +23,6 @@ import Terraces from "./Terraces";
 const ToolpathView = lazy(() => import("@shared/ToolpathView"));
 
 type WorkspaceState = { units?: string };
-
-/** Pictures bigger than this are shrunk on loading, to keep memory in check. */
-const MAX_PICTURE_SIDE = 2400;
-
-const readPicture = async (file: File): Promise<RawImage> => {
-	const bitmap = await createImageBitmap(file);
-	const f = Math.min(1, MAX_PICTURE_SIDE / Math.max(bitmap.width, bitmap.height));
-	const w = Math.max(1, Math.round(bitmap.width * f)), h = Math.max(1, Math.round(bitmap.height * f));
-	const canvas = document.createElement("canvas");
-	canvas.width = w;
-	canvas.height = h;
-	const ctx = canvas.getContext("2d");
-	if (!ctx) throw new Error("Couldn't read the picture.");
-	ctx.drawImage(bitmap, 0, 0, w, h);
-	return { width: w, height: h, data: ctx.getImageData(0, 0, w, h).data };
-};
 
 /** The picture in black and white, as the plugin sees it (flipped when inverted). */
 const GreyPreview = ({ gray, invert }: { gray: Gray; invert: boolean }) => {
