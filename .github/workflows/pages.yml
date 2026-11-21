@@ -30,7 +30,7 @@ jobs:
       - run: npm ci
       - name: Build live demos
         run: |
-          for id in hole-pattern cutout surfacing pocket-cutout vcarve; do
+          for id in hole-pattern cutout surfacing pocket-cutout vcarve heightmap; do
             npm run build:demo --workspace "plugins/$id"
             mkdir -p "site/demos/$id"
             cp -r "plugins/$id/ui-demo/." "site/demos/$id/"

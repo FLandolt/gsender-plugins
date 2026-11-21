@@ -15,10 +15,11 @@ Small, free plugins for [gSender](https://github.com/Sienci-Labs/gsender) that t
 | **Pocket Cutout** | Clears a rectangular or round pocket. The bit spirals down (no plunging), then clears in a spiral from the middle outwards, clockwise or counter-clockwise, with smooth lane changes between rings. Zero at the centre or any corner. | [plugins/pocket-cutout](plugins/pocket-cutout) |
 | **V-Carve** | Carves text, SVG shapes and pictures with a V-bit: deeper where the shape is wide, with sharp points at the corners. Refuses unsafe settings and says why. | [plugins/vcarve](plugins/vcarve) |
 | **Surfacing** | Faces a rectangular area. Choose the start corner and direction, how passes turn (outside or inside the material) whether they run back and forth or all the same way, and where to zero (any corner or the centre). | [plugins/surfacing](plugins/surfacing) |
+| **Height Map** | Carves a picture or height map (colour works too) into stepped levels, like a contour model. Choose the depth and how many steps down; the darkest parts go deepest (or the lightest, inverted). Each level is cleared with back-and-forth rows and an outline pass, and a top-down depth map shows what every spot will be cut to. | [plugins/heightmap](plugins/heightmap) |
 
 All plugins:
 
-- Write `G0`/`G1` moves and, where the shape has circles or rounded corners, by default `G2`/`G3` arcs (V-Carve writes straight moves only) (smaller files, smoother motion). Pick **Lines (G1)** under *More options* to get short `G1` chords instead. No canned cycles and no cutter compensation, so the output runs on GRBL 1.1 and grblHAL.
+- Write `G0`/`G1` moves and, where the shape has circles or rounded corners, by default `G2`/`G3` arcs (V-Carve and Height Map write straight moves only) (smaller files, smoother motion). Pick **Lines (G1)** under *More options* to get short `G1` chords instead. No canned cycles and no cutter compensation, so the output runs on GRBL 1.1 and grblHAL.
 - Show a 3D toolpath preview using gSender's own viewer, with the bit drawn at your tool diameter. Switch the preview to **Material** to run the viewer's cut simulation and see what is left of a block of stock, so any uncut area stands out.
 - Walk you through the settings in steps (tap a step's tab to jump straight to it, or use Back / Next). A red dot marks a step that still needs something, and the last step sums up the job before you load it.
 - Keep the preview on screen all the time: beside the settings on a landscape screen, below them on a portrait (9:16) or narrow one. Only the settings scroll.
@@ -30,7 +31,7 @@ All plugins:
 - Work in millimetres or inches.
 - Load the program straight into gSender with **Load to gSender**.
 
-You can try both in your browser on the [website](https://flandolt.github.io/gsender-plugins/). In the demo, **Load to gSender** downloads the `.nc` file instead.
+You can try them all in your browser on the [website](https://flandolt.github.io/gsender-plugins/). In the demo, **Load to gSender** downloads the `.nc` file instead.
 
 ## Install
 

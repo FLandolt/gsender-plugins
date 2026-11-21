@@ -1,0 +1,6 @@
+@import "tailwindcss";
+/* The shared look (palette, font, sliders, layout variants). */
+@import "../../../packages/shared/src/theme.css";
+
+/* Class names used by the shared components live outside this package. */
+@source "../../../packages/shared/src";
