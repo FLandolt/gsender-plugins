@@ -360,8 +360,8 @@ export const SliderField = ({
 };
 
 /**
- * Problems, warnings and things still to do, in a strip that sits above the action bar. It is
- * outside the scrolling settings column, so it stays in view however far the form is scrolled.
+ * Problems, warnings and things still to do, in a strip right under the top bar. It is outside the
+ * scrolling settings column, so it stays in view however far the form is scrolled.
  */
 export const Notices = ({ errors = [], warnings = [], info = [] }: { errors?: string[]; warnings?: string[]; info?: string[] }) => {
 	if (errors.length === 0 && warnings.length === 0 && info.length === 0) return null;
@@ -383,7 +383,7 @@ export const Notices = ({ errors = [], warnings = [], info = [] }: { errors?: st
 		</li>
 	);
 	return (
-		<div role="alert" className="shrink-0 border-t border-gray-200 bg-white/85 px-4 py-1.5 text-[13px] text-gray-800 backdrop-blur-xl dark:border-slate-800 dark:bg-slate-900/85 dark:text-slate-200">
+		<div role="alert" className="shrink-0 border-b border-gray-200 bg-white/85 px-4 py-1.5 text-[13px] text-gray-800 backdrop-blur-xl dark:border-slate-800 dark:bg-slate-900/85 dark:text-slate-200">
 			<ul className="m-0 max-h-32 list-none overflow-y-auto p-0">
 				{errors.map((e) => row(e, "e"))}
 				{warnings.map((w) => row(w, "w"))}

@@ -52,9 +52,9 @@ export const StatRow = ({ items }: { items: [label: string, value: string][] }) 
  *
  * - The settings are split into steps, shown one at a time. Tabs along the top jump to any step,
  *   Back / Next walk through them in order, and a red dot marks a step that still needs something.
- * - The preview is always on screen: beside the settings on a landscape screen, above them on a
+ * - The preview is always on screen: beside the settings on a landscape screen, below them on a
  *   portrait (9:16) or narrow one. Only the settings scroll.
- * - Problems and the Load button stay pinned to the bottom.
+ * - Back / Next, G-code and Load sit in the top bar, with any problems right under them.
  */
 const PluginLayout = ({
 	title,
@@ -77,7 +77,7 @@ const PluginLayout = ({
 	/** The program, for Show G-code. Empty disables the button. */
 	code: string;
 	notices?: ReactNode;
-	/** The main buttons (Load to gSender, …), right-aligned in the bottom bar. */
+	/** The main buttons (Load to gSender, …), at the right of the top bar. */
 	actions: ReactNode;
 	status?: Status;
 }) => {
@@ -100,14 +100,33 @@ const PluginLayout = ({
 
 	return (
 		<div className="flex h-full flex-col bg-gray-50 text-gray-900 antialiased dark:bg-black dark:text-slate-100">
-			<header className="shrink-0 border-b border-gray-200 bg-white/80 px-4 pt-3 backdrop-blur-xl backdrop-saturate-150 dark:border-slate-800 dark:bg-black/70">
-				<div className="flex min-w-0 items-center gap-2.5">
-					<Mark />
-					<h1 className="m-0 shrink-0 text-[17px] font-semibold tracking-tight">{title}</h1>
-					<p className="m-0 min-w-0 truncate text-[13px] text-gray-500 dark:text-slate-400" title={intro}>
-						{intro}
-					</p>
+			<header className="shrink-0 border-b border-gray-200 bg-white/80 px-4 pt-2.5 backdrop-blur-xl backdrop-saturate-150 dark:border-slate-800 dark:bg-black/70">
+				{/* Title on the left, the controls on the right: Back / Next, G-code and the main actions. */}
+				<div className="flex flex-wrap items-center gap-x-3 gap-y-2">
+					<div className="flex min-w-0 flex-1 basis-56 items-center gap-2.5">
+						<Mark />
+						<h1 className="m-0 shrink-0 text-[17px] font-semibold tracking-tight">{title}</h1>
+						<p className="m-0 min-w-0 truncate text-[13px] text-gray-500 dark:text-slate-400" title={intro}>
+							{intro}
+						</p>
+					</div>
+					<div className="flex w-full flex-wrap items-center justify-end gap-2 sm:ml-auto sm:w-auto">
+						<button type="button" className={`${navBtn} max-sm:px-3`} disabled={at === 0} onClick={() => setIndex(at - 1)} aria-label="Previous step">
+							<Chevron dir="left" /> <span className="max-sm:hidden">Back</span>
+						</button>
+						<button type="button" className={`${navBtn} max-sm:px-3`} disabled={at === steps.length - 1} onClick={() => setIndex(at + 1)} aria-label="Next step">
+							<span className="max-sm:hidden">Next</span> <Chevron dir="right" />
+						</button>
+						<span aria-hidden className="mx-1 hidden h-6 w-px bg-gray-200 sm:block dark:bg-slate-700" />
+						<button type="button" className={secondaryBtn} disabled={!code} onClick={() => setShowCode((v) => !v)}>
+							{showCode ? "Hide G-code" : "G-code"}
+						</button>
+						{actions}
+					</div>
 				</div>
+				{status && (
+					<p className={`m-0 mt-2 text-right text-[13px] ${status.ok ? "text-green-600 dark:text-green-400" : "text-red-600 dark:text-red-400"}`}>{status.text}</p>
+				)}
 				<nav aria-label="Steps" ref={tabs} className="no-scrollbar -mx-4 flex gap-1 overflow-x-auto px-4 pb-2.5 pt-2.5">
 					{steps.map((s, i) => {
 						const current = i === at;
@@ -142,9 +161,12 @@ const PluginLayout = ({
 				</nav>
 			</header>
 
-			<main className="grid min-h-0 grow grid-cols-1 grid-rows-[minmax(190px,44%)_minmax(0,1fr)] wide:grid-cols-[minmax(330px,430px)_minmax(0,1fr)] wide:grid-rows-1">
-				{/* Preview: on top in portrait, on the right in landscape. Never scrolls away. */}
-				<section aria-label="Preview" className="order-1 flex min-h-0 min-w-0 flex-col gap-2.5 border-b border-gray-200 p-4 dark:border-slate-800 wide:order-2 wide:border-b-0 wide:pl-0">
+			{/* Problems sit right under the controls, next to the Load button they block. */}
+			{notices}
+
+			<main className="grid min-h-0 grow grid-cols-1 grid-rows-[minmax(0,1fr)_minmax(200px,44%)] wide:grid-cols-[minmax(330px,430px)_minmax(0,1fr)] wide:grid-rows-1">
+				{/* Preview: at the bottom in portrait, on the right in landscape. Never scrolls away. */}
+				<section aria-label="Preview" className="order-2 flex min-h-0 min-w-0 flex-col gap-2.5 border-t border-gray-200 p-4 dark:border-slate-800 wide:border-t-0 wide:pl-0">
 					{stats}
 					<div className="relative min-h-0 grow">
 						{showCode && code ? (
@@ -156,7 +178,7 @@ const PluginLayout = ({
 				</section>
 
 				{/* Settings for the current step */}
-				<section ref={scroller} aria-label="Settings" className="order-2 min-h-0 overflow-y-auto overscroll-contain p-4 wide:order-1">
+				<section ref={scroller} aria-label="Settings" className="order-1 min-h-0 overflow-y-auto overscroll-contain p-4">
 					<div className="rounded-2xl border border-gray-200 bg-white p-5 shadow-[0_1px_2px_rgb(0_0_0/0.03),0_8px_24px_-12px_rgb(0_0_0/0.08)] dark:border-slate-800 dark:bg-slate-900 dark:shadow-none">
 						<header className="mb-4">
 							<p className="m-0 font-mono text-[11px] uppercase tracking-[0.08em] text-gray-500 dark:text-slate-400">
@@ -175,25 +197,6 @@ const PluginLayout = ({
 				</section>
 			</main>
 
-			{notices}
-
-			<footer className="flex shrink-0 flex-wrap items-center gap-2 border-t border-gray-200 bg-white/80 px-4 py-2.5 backdrop-blur-xl backdrop-saturate-150 dark:border-slate-800 dark:bg-black/70">
-				<button type="button" className={navBtn} disabled={at === 0} onClick={() => setIndex(at - 1)} aria-label="Previous step">
-					<Chevron dir="left" /> Back
-				</button>
-				<button type="button" className={navBtn} disabled={at === steps.length - 1} onClick={() => setIndex(at + 1)} aria-label="Next step">
-					Next <Chevron dir="right" />
-				</button>
-				{status && (
-					<span className={`min-w-0 text-sm ${status.ok ? "text-green-600 dark:text-green-400" : "text-red-600 dark:text-red-400"}`}>{status.text}</span>
-				)}
-				<div className="ml-auto flex flex-wrap items-center justify-end gap-2">
-					<button type="button" className={secondaryBtn} disabled={!code} onClick={() => setShowCode((v) => !v)}>
-						{showCode ? "Hide G-code" : "G-code"}
-					</button>
-					{actions}
-				</div>
-			</footer>
 		</div>
 	);
 };
