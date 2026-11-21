@@ -25,7 +25,7 @@ All plugins:
 - Draw what the numbers mean as you type them: the bit in its cut seen from the side (diameter, depth, one line per pass, safe Z), the stepover seen from above, and the holding tabs.
 - Are made for touch screens: big buttons and sliders, and tapping a number box selects it so you can type over it. A box can be cleared completely before typing a new value (a comma works as the decimal mark too).
 - Won't generate or load anything while a box is empty or a needed value is 0. The depth starts at 0 on purpose, so you always enter it for your stock; the bit starts at 4 mm.
-- Keep Back / Next, G-code and Load to gSender in the top bar, with problems and warnings right under it, so they stay visible on every step.
+- Keep Back / Next, G-code and Load to gSender in the top bar. Problems and warnings float in a card over the corner of the preview, so nothing moves when they appear; fold it to a small pill with ×, and it opens again when the messages change.
 - Offer **Slow**, **Medium** and **High** speed presets, or your own feed, plunge, spindle and stepdown values.
 - Work in millimetres or inches.
 - Load the program straight into gSender with **Load to gSender**.

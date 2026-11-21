@@ -360,10 +360,19 @@ export const SliderField = ({
 };
 
 /**
- * Problems, warnings and things still to do, in a strip right under the top bar. It is outside the
- * scrolling settings column, so it stays in view however far the form is scrolled.
+ * Problems, warnings and things still to do, in a card that floats in the bottom-right corner over
+ * the preview, so nothing moves when it appears. It can be folded to a small pill and opens again
+ * whenever the messages change.
  */
 export const Notices = ({ errors = [], warnings = [], info = [] }: { errors?: string[]; warnings?: string[]; info?: string[] }) => {
+	const [open, setOpen] = useState(true);
+	// Hidden messages come back when they change, so a new problem is never missed.
+	const key = [...errors, "|", ...warnings, "|", ...info].join("\n");
+	const [shownKey, setShownKey] = useState(key);
+	if (key !== shownKey) {
+		setShownKey(key);
+		setOpen(true);
+	}
 	if (errors.length === 0 && warnings.length === 0 && info.length === 0) return null;
 	const icon = (kind: "e" | "w" | "i") => (
 		<svg viewBox="0 0 16 16" width="16" height="16" aria-hidden className={`mt-[2px] shrink-0 ${kind === "e" ? "text-red-600 dark:text-red-400" : kind === "w" ? "text-amber-600 dark:text-amber-400" : "text-blue-600 dark:text-blue-400"}`}>
@@ -382,9 +391,39 @@ export const Notices = ({ errors = [], warnings = [], info = [] }: { errors?: st
 			<span>{text}</span>
 		</li>
 	);
+	const kind = errors.length > 0 ? "e" : warnings.length > 0 ? "w" : "i";
+	const counts = [
+		errors.length ? `${errors.length} ${errors.length === 1 ? "problem" : "problems"}` : "",
+		warnings.length ? `${warnings.length} ${warnings.length === 1 ? "warning" : "warnings"}` : "",
+		info.length ? `${info.length} ${info.length === 1 ? "note" : "notes"}` : "",
+	]
+		.filter(Boolean)
+		.join(" · ");
+	const glass =
+		"pointer-events-auto rounded-2xl border border-gray-200 bg-white/90 text-[13px] text-gray-800 shadow-[0_8px_30px_rgb(0_0_0/0.12)] backdrop-blur-xl backdrop-saturate-150 dark:border-slate-700 dark:bg-slate-900/90 dark:text-slate-200 dark:shadow-[0_8px_30px_rgb(0_0_0/0.5)]";
+	if (!open)
+		return (
+			<button type="button" onClick={() => setOpen(true)} className={`${glass} flex min-h-11 cursor-pointer items-center gap-2 px-4 font-medium transition active:scale-[0.97]`} aria-label={`Show ${counts}`}>
+				{icon(kind)}
+				{counts}
+			</button>
+		);
 	return (
-		<div role="alert" className="shrink-0 border-b border-gray-200 bg-white/85 px-4 py-1.5 text-[13px] text-gray-800 backdrop-blur-xl dark:border-slate-800 dark:bg-slate-900/85 dark:text-slate-200">
-			<ul className="m-0 max-h-32 list-none overflow-y-auto p-0">
+		<div role="alert" className={`${glass} w-full max-w-md`}>
+			<div className="flex items-center justify-between gap-2 border-b border-gray-200 py-1 pl-4 pr-1 dark:border-slate-700">
+				<span className="font-mono text-[10px] uppercase tracking-[0.08em] text-gray-500 dark:text-slate-400">{counts}</span>
+				<button
+					type="button"
+					onClick={() => setOpen(false)}
+					aria-label="Hide"
+					className="flex h-9 w-9 cursor-pointer items-center justify-center rounded-full text-gray-400 transition hover:bg-gray-100 hover:text-gray-900 dark:hover:bg-slate-800 dark:hover:text-slate-100"
+				>
+					<svg viewBox="0 0 16 16" width="14" height="14" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" aria-hidden>
+						<path d="M4 4l8 8M12 4l-8 8" />
+					</svg>
+				</button>
+			</div>
+			<ul className="m-0 max-h-40 list-none overflow-y-auto px-4 py-1.5">
 				{errors.map((e) => row(e, "e"))}
 				{warnings.map((w) => row(w, "w"))}
 				{info.map((i) => row(i, "i"))}

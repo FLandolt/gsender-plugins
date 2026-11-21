@@ -54,7 +54,7 @@ export const StatRow = ({ items }: { items: [label: string, value: string][] }) 
  *   Back / Next walk through them in order, and a red dot marks a step that still needs something.
  * - The preview is always on screen: beside the settings on a landscape screen, below them on a
  *   portrait (9:16) or narrow one. Only the settings scroll.
- * - Back / Next, G-code and Load sit in the top bar, with any problems right under them.
+ * - Back / Next, G-code and Load sit in the top bar; problems float in a card over the preview.
  */
 const PluginLayout = ({
 	title,
@@ -161,10 +161,7 @@ const PluginLayout = ({
 				</nav>
 			</header>
 
-			{/* Problems sit right under the controls, next to the Load button they block. */}
-			{notices}
-
-			<main className="grid min-h-0 grow grid-cols-1 grid-rows-[minmax(0,1fr)_minmax(200px,44%)] wide:grid-cols-[minmax(330px,430px)_minmax(0,1fr)] wide:grid-rows-1">
+			<main className="relative grid min-h-0 grow grid-cols-1 grid-rows-[minmax(0,1fr)_minmax(200px,44%)] wide:grid-cols-[minmax(330px,430px)_minmax(0,1fr)] wide:grid-rows-1">
 				{/* Preview: at the bottom in portrait, on the right in landscape. Never scrolls away. */}
 				<section aria-label="Preview" className="order-2 flex min-h-0 min-w-0 flex-col gap-2.5 border-t border-gray-200 p-4 dark:border-slate-800 wide:border-t-0 wide:pl-0">
 					{stats}
@@ -195,6 +192,8 @@ const PluginLayout = ({
 						</button>
 					)}
 				</section>
+				{/* Problems float over the bottom-right of the preview, so nothing shifts when they come and go. */}
+				{notices ? <div className="pointer-events-none absolute bottom-4 right-4 z-20 flex max-w-[calc(100%-2rem)] justify-end">{notices}</div> : null}
 			</main>
 
 		</div>
