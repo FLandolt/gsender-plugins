@@ -1,0 +1,123 @@
+name: Auto release
+
+# Every push to main releases the plugins that need it, with no manual tagging:
+#   - a plugin whose newest tag has no GitHub release yet is released at that tag;
+#   - a plugin whose code changed since its newest tag gets the next patch version
+#     (cutout-v0.0.2 -> cutout-v0.0.3), a new tag and a release;
+#   - a plugin with no tag at all starts at 0.0.1.
+# Changes to packages/shared or package-lock.json count for every plugin; README edits don't.
+# Run it by hand from the Actions tab (Run workflow) to catch up at any time.
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: auto-release
+  cancel-in-progress: false
+
+jobs:
+  plan:
+    runs-on: ubuntu-latest
+    outputs:
+      matrix: ${{ steps.plan.outputs.matrix }}
+      any: ${{ steps.plan.outputs.any }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Work out which plugins to release
+        id: plan
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          git fetch --tags --force --quiet
+          items=()
+          for dir in plugins/*/; do
+            id=$(basename "$dir")
+            [ -f "plugins/$id/gsender-plugin.json" ] || continue
+            last=$(git tag -l "$id-v*" --sort=-v:refname | head -n1)
+            if [ -z "$last" ]; then
+              version=0.0.1; ref=$GITHUB_SHA; why="first release"
+            elif ! gh release view "$last" >/dev/null 2>&1; then
+              version=${last##*-v}; ref=$(git rev-list -n1 "$last"); why="$last has no release yet"
+            elif ! git diff --quiet "$last" "$GITHUB_SHA" -- "plugins/$id" packages/shared package-lock.json ":(exclude)plugins/$id/*.md"; then
+              IFS=. read -r major minor patch <<< "${last##*-v}"
+              version="$major.$minor.$((patch + 1))"; ref=$GITHUB_SHA; why="changed since $last"
+            else
+              echo "$id: nothing new since $last"
+              continue
+            fi
+            echo "$id: release $version ($why)"
+            items+=("{\"plugin\":\"$id\",\"version\":\"$version\",\"ref\":\"$ref\"}")
+          done
+          if [ ${#items[@]} -eq 0 ]; then
+            echo "matrix=[]" >> "$GITHUB_OUTPUT"
+            echo "any=false" >> "$GITHUB_OUTPUT"
+          else
+            (IFS=,; echo "matrix=[${items[*]}]") >> "$GITHUB_OUTPUT"
+            echo "any=true" >> "$GITHUB_OUTPUT"
+          fi
+
+  release:
+    needs: plan
+    if: needs.plan.outputs.any == 'true'
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include: ${{ fromJSON(needs.plan.outputs.matrix) }}
+    env:
+      PLUGIN: ${{ matrix.plugin }}
+      VERSION: ${{ matrix.version }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ matrix.ref }}
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - run: npm ci
+
+      - name: Test
+        run: npm test --workspace "plugins/$PLUGIN"
+
+      - name: Sync version to the release
+        run: |
+          cd "plugins/$PLUGIN"
+          node -e "
+            const fs = require('fs');
+            for (const file of ['package.json', 'gsender-plugin.json']) {
+              const data = JSON.parse(fs.readFileSync(file, 'utf8'));
+              data.version = process.env.VERSION;
+              fs.writeFileSync(file, JSON.stringify(data, null, '\t') + '\n');
+            }
+          "
+
+      - name: Build
+        run: npm run build --workspace "plugins/$PLUGIN"
+
+      - name: Package plugin zip
+        run: |
+          STAGE="$(mktemp -d)/$PLUGIN"
+          mkdir -p "$STAGE"
+          cp "plugins/$PLUGIN/package.json" "plugins/$PLUGIN/gsender-plugin.json" "$STAGE/"
+          cp -r "plugins/$PLUGIN/ui" "$STAGE/"
+          (cd "$STAGE" && zip -r "$GITHUB_WORKSPACE/$PLUGIN-$VERSION.zip" .)
+
+      # Creates the tag at this commit if it doesn't exist yet. Tags made here don't start
+      # the tag-push Release workflow, so nothing is released twice.
+      - name: Create release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ matrix.plugin }}-v${{ matrix.version }}
+          target_commitish: ${{ matrix.ref }}
+          files: ${{ matrix.plugin }}-${{ matrix.version }}.zip
+          generate_release_notes: true

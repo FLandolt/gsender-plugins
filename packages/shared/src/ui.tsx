@@ -317,12 +317,16 @@ export const Toggle = ({
 	</label>
 );
 
-/** Slider paired with the number field it drives. */
+/**
+ * Slider paired with the number field it drives. The slider moves in steps of `step` (0.5 by
+ * default) so it lands on round numbers; the box still takes any exact value.
+ */
 export const SliderField = ({
 	label,
 	value,
 	min,
 	max,
+	step = 0.5,
 	suffix,
 	onChange,
 }: {
@@ -330,23 +334,29 @@ export const SliderField = ({
 	value: number;
 	min: number;
 	max: number;
+	/** Slider increment, in the shown units. */
+	step?: number;
 	suffix?: string;
 	onChange: (v: number) => void;
-}) => (
-	<div className="flex flex-col gap-1">
-		<NumberField label={label} value={value} suffix={suffix} onChange={onChange} />
-		<input
-			type="range"
-			min={min}
-			max={Math.max(max, min)}
-			step="any"
-			value={Number.isFinite(value) ? Math.min(Math.max(value, min), Math.max(max, min)) : min}
-			onChange={(e) => onChange(e.currentTarget.valueAsNumber)}
-			className="touch-range w-full accent-blue-600"
-			aria-label={`${label} slider`}
-		/>
-	</div>
-);
+}) => {
+	// Top of the slider: the largest whole step that fits under the maximum.
+	const top = Number.isFinite(max) ? Math.max(min, min + Math.floor((max - min) / step + 1e-9) * step) : min;
+	return (
+		<div className="flex flex-col gap-1">
+			<NumberField label={label} value={value} suffix={suffix} onChange={onChange} />
+			<input
+				type="range"
+				min={min}
+				max={top}
+				step={step}
+				value={Number.isFinite(value) ? Math.min(Math.max(value, min), top) : min}
+				onChange={(e) => onChange(Number((Math.round(e.currentTarget.valueAsNumber / step) * step).toFixed(4)))}
+				className="touch-range w-full accent-blue-600"
+				aria-label={`${label} slider`}
+			/>
+		</div>
+	);
+};
 
 /**
  * Problems, warnings and things still to do, in a strip that sits above the action bar. It is

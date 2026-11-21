@@ -68,14 +68,22 @@ The website's live demos are built from the plugin sources by the [Pages workflo
 
 ## Releasing
 
-Tag a plugin to build it and publish its zip as a GitHub release:
+Releases are automatic. On every push to `main` the [auto-release workflow](.github/workflows/auto-release.yml) looks at each plugin:
+
+- If its code changed since its newest tag, it gets the next patch version (`cutout-v0.0.2` → `cutout-v0.0.3`): the plugin is tested, built and published as `<plugin>-<version>.zip` on a new GitHub release with that tag.
+- If its newest tag has no release yet, that tag is released.
+- Otherwise nothing happens. Changes to `packages/shared` count for every plugin; README edits don't.
+
+The website's download buttons pick up the newest release automatically. To catch up by hand, open the workflow in the Actions tab and press **Run workflow**.
+
+For a bigger version jump, tag it yourself, one tag per push (GitHub ignores tag pushes of more than three tags at once):
 
 ```bash
 git tag cutout-v0.1.0
-git push --tags
+git push origin cutout-v0.1.0
 ```
 
-The [release workflow](.github/workflows/release.yml) takes the plugin name and version from the tag, builds it, and attaches `<plugin>-<version>.zip` to the release. The website's download buttons pick up the newest release automatically.
+The [release workflow](.github/workflows/release.yml) builds that tag, and later automatic releases count on from it.
 
 ## How this was made
 

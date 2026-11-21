@@ -109,6 +109,7 @@ const App = () => {
 									value={shown(params.cornerRadius)}
 									min={0}
 									max={shown(Math.min(params.width, params.height) / 2)}
+									step={units === "in" ? 0.02 : 0.5}
 									onChange={(v) => update({ cornerRadius: Math.max(0, v) * scale })}
 								/>
 							</div>
