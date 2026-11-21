@@ -151,3 +151,30 @@ describe("contrast", () => {
 		expect([...levelMap(g, 2, false)]).toEqual([0, 0, 0]);
 	});
 });
+
+describe("smoothing keeps sharp edges sharp", () => {
+	// A pure black disc (radius 30 mm) on white, 100 × 100 mm, cut in 3 steps.
+	const disc = toGray(picture(200, 200, (x, y) => (Math.hypot(x + 0.5 - 100, y + 0.5 - 100) < 60 ? 0 : 255)));
+	const p = job({ steps: 3, depth: 9, smoothing: 1 });
+	const plan = planCut(disc, options(p, pictureSize(disc, "width", 100)));
+
+	it("a black-and-white picture keeps just the top and the bottom level", () => {
+		expect(new Set(plan.target)).toEqual(new Set([0, 3]));
+	});
+	it("every pass cuts the wall in the same place: straight down, not stepped in", () => {
+		const r = p.toolDiameter / 2;
+		const wall = plan.passes.map((pass) => Math.max(...pass.strokes.flat().map((pt) => Math.hypot(pt.x - 50, pt.y - 50))));
+		for (const w of wall) expect(w).toBeCloseTo(30 - r, 0);
+		expect(Math.max(...wall) - Math.min(...wall)).toBeLessThan(0.05);
+	});
+	it("a gradient still uses every level", () => {
+		const ramp = toGray(picture(300, 100, (x) => Math.round((x / 299) * 255)));
+		const q = planCut(ramp, options(job({ steps: 3, smoothing: 1 }), pictureSize(ramp, "width", 150)));
+		expect(new Set(q.target)).toEqual(new Set([0, 1, 2, 3]));
+	});
+	it("removes a speck smaller than the smoothing", () => {
+		const speck = toGray(picture(200, 200, (x, y) => (Math.hypot(x - 100, y - 100) < 1.5 ? 0 : 255)));
+		const q = planCut(speck, options(job({ steps: 2, smoothing: 1 }), pictureSize(speck, "width", 100)));
+		expect(q.target.every((v) => v === 0)).toBe(true);
+	});
+});

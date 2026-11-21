@@ -82,14 +82,17 @@ export const MAX_CELLS = 360;
 /**
  * Resamples the picture onto a grid covering `width` × `height` mm, plus `pad` mm of margin all round.
  */
-export const makeGrid = (g: Gray, width: number, height: number, o: { maxCells?: number; pad?: number } = {}): Grid => {
+export const makeGrid = (g: Gray, width: number, height: number, o: { maxCells?: number; pad?: number; nearest?: boolean } = {}): Grid => {
 	const maxCells = o.maxCells ?? MAX_CELLS;
 	const cell = Math.max(width, height) / maxCells;
 	const padCells = Math.max(0, Math.ceil((o.pad ?? 0) / cell));
 	const iw = Math.max(1, Math.round(width / cell)), ih = Math.max(1, Math.round(height / cell));
 	const w = iw + 2 * padCells, h = ih + 2 * padCells;
-	const src = shrink(g, maxCells * 2);
+	// `nearest` takes each cell from the nearest pixel: no blending, so a black-and-white picture stays
+	// black and white and no grey fringe appears at its edges.
+	const src = o.nearest ? g : shrink(g, maxCells * 2);
 	const sample = (u: number, v: number) => {
+		if (o.nearest) return src.v[Math.min(src.h - 1, Math.max(0, Math.round(v))) * src.w + Math.min(src.w - 1, Math.max(0, Math.round(u)))];
 		const x = Math.min(src.w - 1, Math.max(0, u)), y = Math.min(src.h - 1, Math.max(0, v));
 		const x0 = Math.floor(x), y0 = Math.floor(y), x1 = Math.min(src.w - 1, x0 + 1), y1 = Math.min(src.h - 1, y0 + 1);
 		const fx = x - x0, fy = y - y0;

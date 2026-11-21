@@ -170,7 +170,7 @@ const App = () => {
 						step={units === "in" ? 0.02 : 0.5}
 						onChange={(v) => update({ smoothing: Math.max(0, v) * scale })}
 					/>
-					<Hint>Blurs the picture a little before it is split into levels, so noise and tiny specks don't become cuts.</Hint>
+					<Hint>Removes specks and smooths ragged edges without blurring: sharp edges stay one straight wall down, and a black-and-white picture keeps just two levels.</Hint>
 					<PositionPicker label="Zero (X0 Y0)" centre value={params.origin} onChange={(origin) => update({ origin })} />
 				</>
 			),

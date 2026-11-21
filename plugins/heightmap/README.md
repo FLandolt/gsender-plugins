@@ -6,7 +6,7 @@ Load any picture (colour works too: it is turned to black and white), set how de
 
 ## Settings
 
-1. **Picture**: choose the file, invert it if needed, and set its real size by width or height (the other side follows). **Smoothing** blurs the picture a little first, so noise and specks don't turn into tiny cuts. Pick where X0 Y0 is.
+1. **Picture**: choose the file, invert it if needed, and set its real size by width or height (the other side follows). **Smoothing** cleans up the levels: it removes specks and smooths ragged edges, but never blurs a sharp edge into extra steps, so a black-and-white picture keeps one straight wall straight down to the bottom. Pick where X0 Y0 is.
 2. **Levels & depth**: the number of steps down (1 to 12) and the depth of the deepest level. The levels are spread evenly between the stock top and that depth. The picture's own darkest-to-lightest range is used, so a height map that never reaches pure black or white still uses every level.
 3. **Bit**: an end mill's diameter and the stepover.
 4. **Speed**: Slow / Medium / High presets or your own feeds. A level deeper than the stepdown is cut in several passes.
