@@ -19,7 +19,7 @@ Load any picture (colour works too: it is turned to black and white), set how de
 
 ## How it cuts
 
-Passes go from shallow to deep. At each pass depth the bit clears every part of the picture that is at that level or deeper with back-and-forth rows (like Surfacing), staying down between rows where the straight link stays inside the area, then runs once around each outline for clean walls. The bit's centre only goes where the whole bit fits, so it never cuts into a higher level and never leaves the picture's rectangle. Between areas it lifts to 1 mm above the stock, moves across, drops to just above the floor the last pass left and plunges at the plunge rate.
+Passes go from shallow to deep. At each pass depth the bit clears every part of the picture that is at that level or deeper in rings one stepover apart, from the middle of each area outwards, ending on the wall for a clean edge, like Pocket Cutout's spiral but for any shape. The rings are outlines of a distance map, so they are quick to work out. Each ring starts where the last one ended and the bit stays down between them; it lifts only to reach another area. Whatever no ring reached is cleaned up with a few short rows. The bit's centre only goes where the whole bit fits, so it never cuts into a higher level and never leaves the picture's rectangle. Each area is entered with a ramp along its first ring, not a straight plunge.
 
 Only `G0`/`G1` moves are written, so the output runs on GRBL 1.1 and grblHAL.
 

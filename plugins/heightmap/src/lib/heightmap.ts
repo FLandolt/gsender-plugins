@@ -6,7 +6,7 @@
  * 2. It is blurred by the smoothing radius, its own darkest-to-lightest range is stretched, and it is
  *    split into `steps + 1` bands: the lightest band is level 0 (stock top), the darkest is level
  *    `steps` (full depth).
- * 3. The shared clearing plans the passes: rows and outlines that keep the whole bit inside each
+ * 3. The shared clearing plans the passes: rings from the inside out that keep the whole bit inside each
  *    level's area, and works out what the bit really reaches.
  */
 

@@ -51,3 +51,34 @@ describe("picture pocket", () => {
 		expect(check(job()).errors).toHaveLength(0);
 	});
 });
+
+describe("rings from the inside out", () => {
+	const p = job({ origin: "center" });
+	const plan = planPicturePocket(p, disc);
+
+	it("clears each level of a disc in one stroke, without lifting", () => {
+		for (const pass of plan.passes) expect(pass.strokes).toHaveLength(1);
+	});
+	it("starts near the middle and ends on the wall", () => {
+		const stroke = plan.passes[0].strokes[0];
+		const r = (pt: { x: number; y: number }) => Math.hypot(pt.x - 50, pt.y - 50);
+		expect(r(stroke[0])).toBeLessThan(5);
+		expect(r(stroke[stroke.length - 1])).toBeCloseTo(30 - p.toolDiameter / 2, 0);
+	});
+	it("still clears everything with a large stepover", () => {
+		const wide = planPicturePocket(job({ stepover: 0.95 }), disc);
+		expect(wide.missed).toBeLessThan(0.02);
+	});
+	it("goes round an island instead of over it", () => {
+		const ring = toGray(picture(200, 200, (x, y) => {
+			const d = Math.hypot(x + 0.5 - 100, y + 0.5 - 100);
+			return d < 70 && d > 20 ? 0 : 255;
+		}));
+		const q = planPicturePocket(job({ origin: "center" }), ring);
+		const r = p.toolDiameter / 2;
+		for (const pass of q.passes)
+			for (const pt of pass.strokes.flat()) expect(Math.hypot(pt.x - 50, pt.y - 50)).toBeGreaterThanOrEqual(10 + r - 0.6);
+		expect(q.missed).toBeLessThan(0.02);
+	});
+});
+

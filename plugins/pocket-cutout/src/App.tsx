@@ -177,7 +177,7 @@ const App = () => {
 		{
 			id: "spiral",
 			label: isPicture ? "Clearing" : "Spiral",
-			hint: isPicture ? "Back-and-forth rows across the shape, then once around its outline for clean walls." : "Starts in the middle and works outwards, ending on the wall.",
+			hint: isPicture ? "Rings from the middle of the shape outwards, ending on the wall, like the rectangle and circle spiral." : "Starts in the middle and works outwards, ending on the wall.",
 			issue: !(params.stepover > 0 && params.stepover <= 1),
 			content: (
 				<>

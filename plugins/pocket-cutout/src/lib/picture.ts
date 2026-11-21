@@ -2,7 +2,7 @@
  * The Picture shape: the shape in an image, cleared as a pocket.
  *
  * The picture is resampled onto a grid, turned black and white by the threshold, and the shared
- * clearing plans each level: back-and-forth rows wherever the whole bit fits inside the shape, then
+ * clearing plans each level: rings from the middle outwards wherever the whole bit fits inside the shape, ending on
  * one pass around each outline. Each level ramps in along its first row, so the bit doesn't plunge
  * straight into the material.
  */

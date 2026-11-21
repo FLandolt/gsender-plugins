@@ -204,7 +204,7 @@ const App = () => {
 					{len("Bit diameter", params.toolDiameter, (v) => update({ toolDiameter: v }), true)}
 					<NumberField label="Stepover" required suffix="× bit" value={params.stepover} onChange={(stepover) => update({ stepover })} />
 					<StepoverDiagram units={units} tool={params.toolDiameter} stepover={params.stepover} />
-					<Hint>Each level is cleared with back-and-forth rows, then the bit runs once around its outline for clean walls. It never cuts into a higher level.</Hint>
+					<Hint>Each level is cleared in rings from its middle outwards, ending on the wall for a clean edge, like a pocket. It never cuts into a higher level.</Hint>
 				</>
 			),
 		},

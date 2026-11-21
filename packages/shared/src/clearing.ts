@@ -4,11 +4,17 @@
  *
  * Each pass depth cuts every cell whose level is at least that deep. The bit's centre may only go
  * where the whole bit fits inside that area (found with a distance transform), so it never cuts into
- * a higher level. Inside it the bit runs back-and-forth rows, joined without lifting where the
- * straight link stays inside, then follows each outline once for clean walls.
+ * a higher level. Inside it the bit cuts rings at a constant distance from the wall, one stepover
+ * apart, from the inside out, ending on the wall (like Pocket Cutout's spiral, for any shape).
+ *
+ * The rings are cheap: they are outlines of the same distance map, at 0, 1, 2 … stepovers from the
+ * wall. Each ring follows the nearest ring one step further out, so each area is cleared from
+ * its middle outwards towards each wall in turn; each ring starts at the point nearest where the last one ended, and the bit stays down
+ * when that link is short and stays inside the area (a long one lifts, rather than cut a slot). Whatever no ring reached (the middle of a long, thin
+ * area with a large stepover) is cleaned up first with a few short rows.
  */
 
-import { cellCentre, distanceToOutside, type Grid, type Pt, ringsToMm, simplifyRing, traceContours } from "./picture";
+import { cellCentre, distanceToOutside, type Grid, pointInRing, type Pt, ringArea, ringsToMm, simplifyRing, traceContours } from "./picture";
 
 /** One cut at constant depth: a polyline in mm (picture coordinates, Y up). Closed strokes end where they start. */
 export type Stroke = Pt[];
@@ -43,6 +49,170 @@ const staysInside = (allowed: Uint8Array, g: Grid, a: Pt, b: Pt): boolean => {
 	return true;
 };
 
+type Loop = { pts: Pt[]; area: number; children: Loop[] };
+
+/** Back-and-forth rows over the cells of `mask`, `spacing` mm apart, joined where the link stays in `allowed`. */
+const rowStrokes = (grid: Grid, mask: Uint8Array, allowed: Uint8Array, spacing: number): Stroke[] => {
+	const { w, h, cell } = grid;
+	const strokes: Stroke[] = [];
+	let row = 0;
+	for (let y = cell * 0.5; y < h * cell; y += spacing, row += 1) {
+		const j = Math.min(h - 1, Math.floor(y / cell));
+		const segs: { a: Pt; b: Pt }[] = [];
+		let start = -1;
+		for (let i = 0; i <= w; i += 1) {
+			const on = i < w && mask[j * w + i] === 1;
+			if (on && start < 0) start = i;
+			if (!on && start >= 0) {
+				segs.push({ a: cellCentre(grid, start, j), b: cellCentre(grid, i - 1, j) });
+				start = -1;
+			}
+		}
+		const ordered = row % 2 === 0 ? segs : segs.reverse().map((sg) => ({ a: sg.b, b: sg.a }));
+		for (const sg of ordered) {
+			const last = strokes[strokes.length - 1];
+			const end = last?.[last.length - 1];
+			if (end && staysInside(allowed, grid, end, sg.a)) last.push(sg.a, sg.b);
+			else strokes.push([sg.a, sg.b]);
+		}
+	}
+	return strokes;
+};
+
+/** The ring rotated to start at its point nearest `from`, closed (ends where it starts). */
+const startNear = (ring: Pt[], from: Pt | undefined): Pt[] => {
+	let at = 0;
+	if (from) {
+		let best = Infinity;
+		ring.forEach((pt, i) => {
+			const d = (pt.x - from.x) ** 2 + (pt.y - from.y) ** 2;
+			if (d < best) {
+				best = d;
+				at = i;
+			}
+		});
+	}
+	const rot = [...ring.slice(at), ...ring.slice(0, at)];
+	return [...rot, rot[0]];
+};
+
+/**
+ * Concentric rings over the allowed area (where `field`, in cells, is positive), `step` mm apart,
+ * cut from the inside out. See the comment at the top of the file.
+ */
+export const ringStrokes = (grid: Grid, field: Float32Array, allowed: Uint8Array, step: number, radius: number): Stroke[] => {
+	const { w, h, cell } = grid;
+	let maxF = 0;
+	for (let i = 0; i < field.length; i += 1) if (field[i] > maxF) maxF = field[i];
+	const stepCells = step / cell;
+
+	// The rings at each distance from the wall, oriented with the area on their right (climb milling).
+	const levels: Loop[][] = [];
+	const shifted = new Float32Array(field.length);
+	for (let level = 0; level < maxF; level += stepCells) {
+		for (let i = 0; i < field.length; i += 1) shifted[i] = field[i] - level;
+		const rings = ringsToMm(grid, traceContours(shifted, w, h))
+			.map((ring) => simplifyRing(ring, cell * 0.2))
+			.filter((ring) => ring.length >= 3);
+		const loops = rings.map((pts) => ({ pts, area: ringArea(pts), children: [] as Loop[] }));
+		for (const loop of loops) {
+			// A ring inside an odd number of others at the same level goes round an island.
+			const hole = loops.filter((o) => o !== loop && pointInRing(loop.pts[0], o.pts)).length % 2 === 1;
+			const ccw = loop.area > 0;
+			if (hole !== ccw) loop.pts.reverse();
+		}
+		levels.push(loops);
+	}
+
+	// Each ring follows the nearest ring one step further out, so the rings along one wall form a
+	// chain (in a frame-shaped area, one along the outside and one round the island), cut in one go.
+	const roots: Loop[] = [...(levels[0] ?? [])];
+	const near2 = (pt: Pt, ring: Pt[]) => {
+		let best = Infinity;
+		for (const q of ring) best = Math.min(best, (q.x - pt.x) ** 2 + (q.y - pt.y) ** 2);
+		return best;
+	};
+	for (let k = 1; k < levels.length; k += 1)
+		for (const loop of levels[k]) {
+			let parent: Loop | null = null, bestD = Infinity;
+			for (const o of levels[k - 1]) {
+				const d = near2(loop.pts[0], o.pts);
+				if (d < bestD) {
+					bestD = d;
+					parent = o;
+				}
+			}
+			(parent ? parent.children : roots).push(loop);
+		}
+
+	// Inside out: a ring's inner rings first, nearest first, then the ring itself.
+	const order: Pt[][] = [];
+	let at: Pt | undefined;
+	const visit = (loops: Loop[]) => {
+		const left = [...loops];
+		while (left.length) {
+			let best = 0, bestD = Infinity;
+			left.forEach((l, i) => {
+				const d = at ? Math.min(...l.pts.map((pt) => (pt.x - at!.x) ** 2 + (pt.y - at!.y) ** 2)) : 0;
+				if (d < bestD) {
+					bestD = d;
+					best = i;
+				}
+			});
+			const loop = left.splice(best, 1)[0];
+			visit(loop.children);
+			const ring = startNear(loop.pts, at);
+			order.push(ring);
+			at = ring[ring.length - 1];
+		}
+	};
+	visit(roots);
+
+	// What the rings don't reach: cleaned up first with short rows.
+	const path = new Uint8Array(w * h);
+	for (const ring of order)
+		for (let k = 1; k < ring.length; k += 1) {
+			const a = ring[k - 1], b = ring[k];
+			const n = Math.max(1, Math.ceil(Math.hypot(b.x - a.x, b.y - a.y) / (cell * 0.5)));
+			for (let s = 0; s <= n; s += 1) {
+				const i = Math.floor((a.x + ((b.x - a.x) * s) / n - grid.x0) / cell), j = Math.floor((a.y + ((b.y - a.y) * s) / n - grid.y0) / cell);
+				if (i >= 0 && j >= 0 && i < w && j < h) path[j * w + i] = 1;
+			}
+		}
+	const notPath = path.map((v) => (v ? 0 : 1));
+	const toPath = distanceToOutside(notPath, w, h, false);
+	const missed = new Uint8Array(w * h);
+	let anyMissed = false;
+	for (let i = 0; i < missed.length; i += 1)
+		if (allowed[i] && toPath[i] * cell > radius * 0.95) {
+			missed[i] = 1;
+			anyMissed = true;
+		}
+	const strokes: Stroke[] = [];
+	if (anyMissed) {
+		// Rows closer than the bit's radius over the missed spots and a margin round them, so none slips between rows.
+		const spacing = radius * 0.9;
+		const toMissed = distanceToOutside(missed.map((v) => (v ? 0 : 1)), w, h, false);
+		const near = new Uint8Array(w * h);
+		for (let i = 0; i < near.length; i += 1) near[i] = allowed[i] && toMissed[i] * cell <= spacing ? 1 : 0;
+		strokes.push(...rowStrokes(grid, near, allowed, spacing));
+	}
+
+	// Join the rings into strokes, staying down where the link stays inside. The wall ring lies on the
+	// edge of the allowed area, so links may touch that edge (the area already keeps half a cell spare).
+	const linkable = new Uint8Array(w * h);
+	for (let i = 0; i < linkable.length; i += 1) linkable[i] = field[i] > -0.75 ? 1 : 0;
+	// A long link would plough a full-depth slot through material not cleared yet: lift instead.
+	const maxLink = Math.max(2 * step, 2 * radius);
+	for (const ring of order) {
+		const last = strokes[strokes.length - 1];
+		const end = last?.[last.length - 1];
+		if (end && Math.hypot(ring[0].x - end.x, ring[0].y - end.y) <= maxLink && staysInside(linkable, grid, end, ring[0])) last.push(...ring);
+		else strokes.push(ring);
+	}
+	return strokes;
+};
+
 /**
  * Plans the passes for a grid whose cells each ask for a level (`target`, 0 = top), with `levels`
  * giving each level's depth (top first, `levels[0]` = 0).
@@ -74,35 +244,7 @@ export const planClearing = (
 			allowed[i] = field[i] > 0 ? 1 : 0;
 		}
 
-		// Back-and-forth rows across the allowed area.
-		const strokes: Stroke[] = [];
-		let row = 0;
-		for (let y = cell * 0.5; y < h * cell; y += step, row += 1) {
-			const j = Math.min(h - 1, Math.floor(y / cell));
-			const segs: { a: Pt; b: Pt }[] = [];
-			let start = -1;
-			for (let i = 0; i <= w; i += 1) {
-				const on = i < w && allowed[j * w + i] === 1;
-				if (on && start < 0) start = i;
-				if (!on && start >= 0) {
-					segs.push({ a: cellCentre(grid, start, j), b: cellCentre(grid, i - 1, j) });
-					start = -1;
-				}
-			}
-			const ordered = row % 2 === 0 ? segs : segs.reverse().map((s) => ({ a: s.b, b: s.a }));
-			for (const s of ordered) {
-				const last = strokes[strokes.length - 1];
-				const end = last?.[last.length - 1];
-				if (end && staysInside(allowed, grid, end, s.a)) last.push(s.a, s.b);
-				else strokes.push([s.a, s.b]);
-			}
-		}
-		// Then once around every outline, for clean walls.
-		for (const ring of ringsToMm(grid, traceContours(field, w, h))) {
-			const pts = simplifyRing(ring, cell * 0.2);
-			if (pts.length < 2) continue;
-			strokes.push([...pts, pts[0]]);
-		}
+		const strokes = ringStrokes(grid, field, allowed, step, r);
 		passes.push({ depth, strokes });
 
 		// Where the bit reaches at a level's final depth: within its radius of an allowed centre.

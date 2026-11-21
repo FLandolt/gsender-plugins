@@ -15,7 +15,7 @@ Small, free plugins for [gSender](https://github.com/Sienci-Labs/gsender) that t
 | **Pocket Cutout** | Clears a rectangular, round or picture-shaped pocket. The bit spirals down (no plunging), then clears in a spiral from the middle outwards, clockwise or counter-clockwise, with smooth lane changes between rings. Zero at the centre or any corner. | [plugins/pocket-cutout](plugins/pocket-cutout) |
 | **V-Carve** | Carves text, SVG shapes and pictures with a V-bit: deeper where the shape is wide, with sharp points at the corners. Refuses unsafe settings and says why. | [plugins/vcarve](plugins/vcarve) |
 | **Surfacing** | Faces a rectangular area. Choose the start corner and direction, how passes turn (outside or inside the material) whether they run back and forth or all the same way, and where to zero (any corner or the centre). | [plugins/surfacing](plugins/surfacing) |
-| **Height Map** | Carves a picture or height map (colour works too) into stepped levels, like a contour model. Choose the depth and how many steps down; the darkest parts go deepest (or the lightest, inverted). Each level is cleared with back-and-forth rows and an outline pass, and a top-down depth map shows what every spot will be cut to. | [plugins/heightmap](plugins/heightmap) |
+| **Height Map** | Carves a picture or height map (colour works too) into stepped levels, like a contour model. Choose the depth and how many steps down; the darkest parts go deepest (or the lightest, inverted). Each level is cleared in rings from the middle outwards, like a pocket, and a top-down depth map shows what every spot will be cut to. | [plugins/heightmap](plugins/heightmap) |
 
 All plugins:
 
