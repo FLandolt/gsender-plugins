@@ -53,8 +53,9 @@ export const defaultParams = (): Params => ({
 	height: 40,
 	cornerRadius: 0,
 	diameter: 40,
-	toolDiameter: 6,
-	depth: 6,
+	toolDiameter: 4,
+	// No depth until one is entered: it depends on the job, so it can't run on a guess.
+	depth: 0,
 	stepdown: 2,
 	stepover: 0.4,
 	rotation: "cw",
@@ -85,7 +86,7 @@ export const check = (p: Params): Problems => {
 		if (p.cornerRadius < 0) errors.push("Corner radius cannot be negative.");
 		if (p.cornerRadius > Math.min(p.width, p.height) / 2 + 1e-9) errors.push("Corner radius is larger than half the shorter side.");
 	}
-	if (!(p.depth > 0)) errors.push("Depth must be greater than 0.");
+	if (!(p.depth > 0)) errors.push(p.depth === 0 ? "Set the pocket depth." : "Depth must be greater than 0.");
 	if (!(p.stepdown > 0)) errors.push("Stepdown must be greater than 0.");
 	if (!(p.stepover > 0 && p.stepover <= 1)) errors.push("Stepover must be between 0 and 1.");
 	if (!(p.feedrate > 0) || !(p.plungeRate > 0)) errors.push("Feed and plunge rates must be greater than 0.");

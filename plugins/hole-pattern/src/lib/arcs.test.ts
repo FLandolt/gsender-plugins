@@ -7,7 +7,10 @@ import { jobStats } from "@shared/stats";
 import { generateGcode, zLevels } from "./generate";
 import { defaultParams, type Params } from "./params";
 
-const job = (patch: Partial<Params> = {}): Params => ({ ...defaultParams(), ...patch });
+/** The defaults with a depth filled in (the plugin starts at 0 so the user has to enter one). */
+const testDefaults = (): Params => ({ ...defaultParams(), depth: 5 });
+
+const job = (patch: Partial<Params> = {}): Params => ({ ...testDefaults(), ...patch });
 const strip = (g: string) => g.replace(/\([^)]*\)/g, "");
 const words = (g: string) => new Set([...strip(g).matchAll(/\b([GM]\d+)\b/g)].map((m) => m[1]));
 

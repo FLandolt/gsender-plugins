@@ -51,8 +51,9 @@ export const defaultParams = (): Params => ({
 	units: "mm",
 	width: 100,
 	height: 60,
-	toolDiameter: 6,
-	depth: 1,
+	toolDiameter: 4,
+	// No depth until one is entered, so the job never runs on a guess.
+	depth: 0,
 	stepover: 0.5,
 	startX: "left",
 	startY: "bottom",
@@ -84,7 +85,7 @@ export const check = (p: Params): Problems => {
 	const warnings: string[] = [];
 	if (!(p.toolDiameter > 0)) errors.push("Tool diameter must be greater than 0.");
 	if (!(p.width > 0) || !(p.height > 0)) errors.push("Width and height must be greater than 0.");
-	if (!(p.depth > 0)) errors.push("Depth must be greater than 0.");
+	if (!(p.depth > 0)) errors.push(p.depth === 0 ? "Set how deep to surface." : "Depth must be greater than 0.");
 	if (!(p.stepdown > 0)) errors.push("Stepdown must be greater than 0.");
 	if (!(p.stepover > 0 && p.stepover <= 1)) errors.push("Stepover must be between 0 and 1.");
 	if (!(p.feedrate > 0) || !(p.plungeRate > 0)) errors.push("Feed and plunge rates must be greater than 0.");

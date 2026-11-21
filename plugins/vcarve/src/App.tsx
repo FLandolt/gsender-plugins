@@ -8,7 +8,9 @@ import { ImageIcon, ShapesIcon, TextIcon } from "@shared/icons";
 import { isStandalone } from "@shared/mockBridge";
 import PositionPicker from "@shared/PositionPicker";
 import { formatMinutes, jobStats } from "@shared/stats";
-import { BlankNumberField, Card, FilePicker, NumberField, Notices, OnOff, Segmented, SpeedPresets, Stat } from "@shared/ui";
+import PluginLayout, { primaryBtn, secondaryBtn, StatRow, type Step } from "@shared/PluginLayout";
+import { POSITION_NAMES } from "@shared/position";
+import { BLANK_MESSAGE, BlankNumberField, FilePicker, hasBlank, More, Notices, NumberField, OnOff, Segmented, SpeedPresets, Summary } from "@shared/ui";
 import { type Units, unitsScale } from "@shared/units";
 
 import ArtworkView from "./ArtworkView";
@@ -129,12 +131,13 @@ const App = () => {
 	const [preview, setPreview] = useState<Preview | null>(null);
 	const [busy, setBusy] = useState(false);
 	const [view, setView] = useState<"artwork" | "toolpath">("artwork");
-	const [showCode, setShowCode] = useState(false);
 	const [status, setStatus] = useState<{ ok: boolean; text: string } | null>(null);
 	const key = useMemo(() => JSON.stringify([params, version]), [params, version]);
 	const fresh = preview !== null && preview.key === key;
 
+	const blank = hasBlank(params);
 	const ready =
+		!blank &&
 		checked.bit !== null &&
 		checked.maxDepth !== null &&
 		checked.errors.length === 0 &&
@@ -181,13 +184,13 @@ const App = () => {
 	const canLoad = fresh && preview !== null && preview.errors.length === 0 && preview.gcode !== "" && !busy;
 
 	// What to tell the user.
-	const errors = [...new Set([...checked.errors, ...artwork.errors, ...(fresh ? preview!.errors : []), ...(assetError ? [assetError] : [])])];
+	const errors = [...new Set([...(blank ? [BLANK_MESSAGE] : []), ...checked.errors, ...artwork.errors, ...(fresh ? preview!.errors : []), ...(assetError ? [assetError] : [])])];
 	const warnings = [...new Set(fresh ? preview!.warnings : artwork.warnings)];
 	const info = [...checked.missing, ...artwork.needs];
 	if (ready && !fresh) info.push(preview ? "Settings changed. Press Preview to update the toolpath." : "Press Preview to see the toolpath.");
 
-	const len = (label: string, mm: number, set: (mm: number) => void) => (
-		<NumberField label={label} value={shown(mm)} suffix={units} onChange={(v) => set(v * scale)} />
+	const len = (label: string, mm: number, set: (mm: number) => void, required = false) => (
+		<NumberField label={label} value={shown(mm)} suffix={units} required={required} onChange={(v) => set(v * scale)} />
 	);
 	const blankLen = (label: string, mm: number | null, set: (mm: number | null) => void, invalid = false, hint?: string) => (
 		<BlankNumberField label={label} value={mm === null ? null : shown(mm)} suffix={units} invalid={invalid} hint={hint} onChange={(v) => set(v === null ? null : v * scale)} />
@@ -203,19 +206,14 @@ const App = () => {
 	};
 	const tile = (mm: number | null) => (mm === null ? "–" : lengthText(mm, units));
 
-	return (
-		<div className="flex h-full flex-col bg-gray-50 text-gray-900 dark:bg-slate-950 dark:text-slate-100">
-			<div className="grid min-h-0 grow grid-cols-1 gap-4 overflow-auto p-4 lg:grid-cols-[minmax(340px,440px)_1fr] lg:overflow-hidden">
-				<div className="flex flex-col gap-4 lg:min-h-0 lg:overflow-y-auto lg:pr-1">
-					<div>
-						<h1 className="m-0 text-xl font-semibold">V-Carve</h1>
-						<p className="m-0 mt-1 text-sm text-gray-500 dark:text-slate-400">
-							Carves text, shapes and pictures with a V-bit: deeper where the shape is wide, shallower where it is narrow, with sharp points at the corners. Z0 = top of stock.
-						</p>
-					</div>
-
-					<Card title="1. Artwork" hint="What to carve">
-						<div className="flex flex-col gap-3">
+	const steps: Step[] = [
+		{
+			id: "artwork",
+			label: "Artwork",
+			hint: "What to carve: text, an SVG drawing or a picture.",
+			issue: artwork.errors.length > 0 || (params.source === "text" ? !params.text.trim() || !(params.letterHeight > 0) || !(params.lineSpacing > 0) : !(params.size > 0)) || assetError !== null,
+			content: (
+				<div className="flex flex-col gap-3">
 							<Segmented
 								value={params.source}
 								onChange={(source) => update({ source })}
@@ -246,7 +244,7 @@ const App = () => {
 									<FilePicker label="Load a font…" accept=".ttf,.otf,.woff" fileName={custom?.name ?? null} onFile={onFont} />
 									<div className="grid grid-cols-2 gap-3">
 										{len("Letter height", params.letterHeight, (letterHeight) => update({ letterHeight }))}
-										<NumberField label="Line spacing" suffix="×" step={0.05} value={params.lineSpacing} onChange={(lineSpacing) => update({ lineSpacing })} />
+										<NumberField label="Line spacing" required suffix="×" value={params.lineSpacing} onChange={(lineSpacing) => update({ lineSpacing })} />
 									</div>
 									<Segmented
 										label="Alignment"
@@ -286,7 +284,7 @@ const App = () => {
 													max={254}
 													value={params.threshold}
 													onChange={(e) => update({ threshold: e.currentTarget.valueAsNumber })}
-													className="w-full accent-blue-600"
+													className="touch-range w-full accent-blue-600"
 													aria-label="Threshold"
 												/>
 											</div>
@@ -313,29 +311,39 @@ const App = () => {
 								</div>
 							)}
 						</div>
-					</Card>
-
-					<Card title="2. V-bit" hint="Common starting values. Check them against your bit's packaging or the maker's page.">
-						<div className="grid grid-cols-2 gap-3">
-							<BlankNumberField label="Included angle" suffix="°" value={params.angle} invalid={bitInvalid.angle} onChange={(angle) => update({ angle })} />
-							{blankLen("Maximum diameter", params.diameter, (diameter) => update({ diameter }), bitInvalid.diameter)}
-							{blankLen("Tip diameter", params.tip, (tip) => update({ tip }), bitInvalid.tip, "0 for a sharp point")}
-							<div className="flex flex-col gap-1">
-								<BlankNumberField
-									label="Cutting length (optional)"
-									suffix={units}
-									value={params.cuttingLength === null ? null : shown(params.cuttingLength)}
-									placeholder="optional"
-									invalid={bitInvalid.cuttingLength}
-									onChange={(v) => update({ cuttingLength: v === null ? null : v * scale })}
-								/>
-							</div>
-						</div>
-						<BitDiagram bit={checked.bit} maxDepth={checked.maxDepth} tooDeep={bitInvalid.maxDepth && params.maxDepth !== null && params.maxDepth > 0} units={units} />
-					</Card>
-
-					<Card title="3. Cutting" hint="How deep and how fast">
-						<div className="flex flex-col gap-3">
+			),
+		},
+		{
+			id: "bit",
+			label: "V-bit",
+			hint: "Common starting values. Check them against your bit's packaging or the maker's page.",
+			issue: checked.bit === null || bitInvalid.angle || bitInvalid.diameter || bitInvalid.tip || bitInvalid.cuttingLength,
+			content: (
+				<>
+					<div className="grid grid-cols-2 gap-3">
+						<BlankNumberField label="Included angle" suffix="°" value={params.angle} invalid={bitInvalid.angle} onChange={(angle) => update({ angle })} />
+						{blankLen("Maximum diameter", params.diameter, (diameter) => update({ diameter }), bitInvalid.diameter)}
+						{blankLen("Tip diameter", params.tip, (tip) => update({ tip }), bitInvalid.tip, "0 for a sharp point")}
+						<BlankNumberField
+							label="Cutting length (optional)"
+							suffix={units}
+							value={params.cuttingLength === null ? null : shown(params.cuttingLength)}
+							placeholder="optional"
+							invalid={bitInvalid.cuttingLength}
+							onChange={(v) => update({ cuttingLength: v === null ? null : v * scale })}
+						/>
+					</div>
+					<BitDiagram bit={checked.bit} maxDepth={checked.maxDepth} tooDeep={bitInvalid.maxDepth && params.maxDepth !== null && params.maxDepth > 0} units={units} />
+				</>
+			),
+		},
+		{
+			id: "cutting",
+			label: "Depth & quality",
+			hint: "How deep it may cut, roughing and quality.",
+			issue: bitInvalid.maxDepth || (params.rough && (!(params.allowance >= 0) || !(params.finishFeedPercent > 0 && params.finishFeedPercent <= 100))),
+			content: (
+				<div className="flex flex-col gap-3">
 							<div className="flex flex-col gap-1">
 								<BlankNumberField
 									label="Maximum depth (optional)"
@@ -363,7 +371,7 @@ const App = () => {
 								{params.rough && (
 									<div className="grid grid-cols-2 gap-3">
 										{len("Wood left on the walls", params.allowance, (allowance) => update({ allowance }))}
-										<NumberField label="Finishing feed" suffix="% of cut feed" step={5} value={params.finishFeedPercent} onChange={(finishFeedPercent) => update({ finishFeedPercent })} />
+										<NumberField label="Finishing feed" required suffix="% of cut feed" value={params.finishFeedPercent} onChange={(finishFeedPercent) => update({ finishFeedPercent })} />
 									</div>
 								)}
 							</div>
@@ -378,38 +386,83 @@ const App = () => {
 								]}
 							/>
 						</div>
-					</Card>
-
-					<Card title="Zero" hint="Where X0 Y0 is on the artwork. Z0 is always the top of the stock.">
-						<PositionPicker label="Zero (X0 Y0)" centre value={params.origin} onChange={(origin) => update({ origin })} />
-					</Card>
-
-					<Card title="Speed" hint={preset ? preset.hint : "Custom values"}>
-						<div className="mb-3">
-							<SpeedPresets value={preset} onPick={(f) => update({ feedrate: f.feedrate, plungeRate: f.plungeRate, spindleRpm: f.spindleRpm })} />
-						</div>
-						<div className="grid grid-cols-2 gap-3">
-							<NumberField label="Cut feed" suffix={`${units}/min`} value={shown(params.feedrate)} onChange={(v) => update({ feedrate: v * scale })} />
-							<NumberField label="Plunge feed" suffix={`${units}/min`} value={shown(params.plungeRate)} onChange={(v) => update({ plungeRate: v * scale })} />
-							<NumberField label="Spindle" suffix="RPM" value={params.spindleRpm} onChange={(v) => update({ spindleRpm: v })} />
-							{len("Safe Z", params.safeZ, (v) => update({ safeZ: v }))}
-						</div>
-						<details className="mt-3">
-							<summary className="cursor-pointer select-none text-sm text-gray-600 dark:text-slate-400">More options</summary>
-							<div className="mt-3 grid grid-cols-2 gap-3">
-								<NumberField label="Spindle ramp up" suffix="s" value={params.spindleDwell} onChange={(v) => update({ spindleDwell: v })} />
-							</div>
-						</details>
-					</Card>
-				</div>
-
-				<div className="flex min-h-96 min-w-0 flex-col gap-3 lg:min-h-0">
-					<div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
-						<Stat label="Deepest needed" value={fresh ? tile(preview!.plan.deepestNeeded) : "–"} />
-						<Stat label="Bit can cut" value={tile(checked.deepest)} />
-						<Stat label="Max depth" value={tile(checked.maxDepth)} />
-						<Stat label="Est. time" value={stats ? formatMinutes(stats.minutes) : "–"} />
+			),
+		},
+		{
+			id: "zero",
+			label: "Zero",
+			hint: "Where X0 Y0 is on the artwork. Z0 is always the top of the stock.",
+			content: <PositionPicker label="Zero (X0 Y0)" centre value={params.origin} onChange={(origin) => update({ origin })} />,
+		},
+		{
+			id: "speed",
+			label: "Speed",
+			hint: preset ? preset.hint : "Custom values",
+			issue: !(params.feedrate > 0) || !(params.plungeRate > 0) || !(params.spindleRpm > 0) || !(params.safeZ > 0) || Number.isNaN(params.spindleDwell),
+			content: (
+				<>
+					<SpeedPresets value={preset} onPick={(f) => update({ feedrate: f.feedrate, plungeRate: f.plungeRate, spindleRpm: f.spindleRpm })} />
+					<div className="grid grid-cols-2 gap-3">
+						<NumberField label="Cut feed" required suffix={`${units}/min`} value={shown(params.feedrate)} onChange={(v) => update({ feedrate: v * scale })} />
+						<NumberField label="Plunge feed" required suffix={`${units}/min`} value={shown(params.plungeRate)} onChange={(v) => update({ plungeRate: v * scale })} />
+						<NumberField label="Spindle" required suffix="RPM" value={params.spindleRpm} onChange={(v) => update({ spindleRpm: v })} />
+						{len("Safe Z", params.safeZ, (v) => update({ safeZ: v }), true)}
 					</div>
+					<More>
+						<div className="grid grid-cols-2 gap-3">
+							<NumberField label="Spindle ramp up" suffix="s" value={params.spindleDwell} onChange={(v) => update({ spindleDwell: v })} />
+						</div>
+					</More>
+				</>
+			),
+		},
+		{
+			id: "check",
+			label: "Check & load",
+			hint: "Press Preview to work out the toolpath, look it over, then load it into gSender. Always air-cut first.",
+			issue: errors.length > 0,
+			content: (
+				<>
+					<Summary
+						rows={[
+							["Artwork", artwork.description || "–"],
+							["V-bit", checked.bit ? `${checked.bit.angle}°, Ø ${lengthText(checked.bit.diameter, units)}${checked.bit.tip > 0 ? `, tip ${lengthText(checked.bit.tip, units)}` : ""}` : "–"],
+							["Max depth", tile(checked.maxDepth)],
+							["Deepest needed", fresh ? tile(preview!.plan.deepestNeeded) : "press Preview"],
+							["Roughing", params.rough ? `Yes, ${lengthText(params.allowance, units)} left for finishing` : "No"],
+							["Quality", params.quality[0].toUpperCase() + params.quality.slice(1)],
+							["Zero", POSITION_NAMES[params.origin]],
+							["Feed / plunge", `${shown(params.feedrate)} / ${shown(params.plungeRate)} ${units}/min`],
+							["Est. time", stats ? formatMinutes(stats.minutes) : "–"],
+						]}
+					/>
+					<button type="button" onClick={runPreview} disabled={busy || !ready} className={fresh ? secondaryBtn : primaryBtn}>
+						{busy ? "Working…" : fresh ? "Preview is up to date" : "Preview the toolpath"}
+					</button>
+				</>
+			),
+		},
+	];
+
+	return (
+		<PluginLayout
+			title="V-Carve"
+			intro="Carves text, shapes and pictures with a V-bit: deeper where the shape is wide. Z0 = top of stock."
+			steps={steps}
+			code={canLoad ? preview!.gcode : ""}
+			status={status}
+			stats={
+				<StatRow
+					items={[
+						["Deepest needed", fresh ? tile(preview!.plan.deepestNeeded) : "–"],
+						["Bit can cut", tile(checked.deepest)],
+						["Max depth", tile(checked.maxDepth)],
+						["Est. time", stats ? formatMinutes(stats.minutes) : "–"],
+					]}
+				/>
+			}
+			preview={
+				<div className="flex h-full flex-col gap-2">
 					{preview?.gcode && (
 						<Segmented
 							value={view}
@@ -420,7 +473,7 @@ const App = () => {
 							]}
 						/>
 					)}
-					<div className="min-h-72 grow">
+					<div className="min-h-0 grow">
 						{view === "toolpath" && preview?.gcode ? (
 							<Suspense fallback={<div className="h-full rounded-xl bg-slate-950" />}>
 								<ToolpathView gcode={preview.gcode} units={units} toolDiameter={checked.bit?.diameter ?? 6} materialView={false} showBit={false} />
@@ -429,48 +482,20 @@ const App = () => {
 							<ArtworkView shapes={artwork.shapes} bounds={artwork.bounds} label="The artwork to carve" marks={fresh ? preview!.tooWide.map((t) => ({ x: t.x, y: t.y, r: t.width / 2 })) : []} />
 						)}
 					</div>
-					{showCode && preview?.gcode && (
-						<pre className="m-0 max-h-60 overflow-auto rounded-xl bg-gray-100 p-3 font-mono text-[11px] leading-relaxed dark:bg-slate-900">
-							{preview.gcode}
-						</pre>
-					)}
 				</div>
-			</div>
-
-			<Notices errors={errors} warnings={warnings} info={info} />
-
-			<footer className="flex flex-wrap items-center gap-3 border-t border-gray-200 bg-white px-4 py-3 dark:border-slate-800 dark:bg-slate-900">
-				<button
-					type="button"
-					onClick={runPreview}
-					disabled={busy || !ready}
-					className={`h-12 cursor-pointer rounded-lg px-6 text-base font-semibold shadow-sm transition active:scale-95 disabled:cursor-default disabled:opacity-40 ${
-						fresh ? "border border-gray-300 hover:border-blue-500 dark:border-slate-600" : "bg-blue-600 text-white hover:bg-blue-500"
-					}`}
-				>
-					{busy ? "Working…" : "Preview"}
-				</button>
-				<button
-					type="button"
-					onClick={send}
-					disabled={!canLoad}
-					className={`h-12 cursor-pointer rounded-lg px-6 text-base font-semibold shadow-sm transition active:scale-95 disabled:cursor-default disabled:opacity-40 ${
-						fresh ? "bg-blue-600 text-white hover:bg-blue-500" : "border border-gray-300 dark:border-slate-600"
-					}`}
-				>
-					Load to gSender
-				</button>
-				<button
-					type="button"
-					onClick={() => setShowCode((v) => !v)}
-					disabled={!canLoad}
-					className="h-12 cursor-pointer rounded-lg border border-gray-300 px-4 text-sm transition hover:border-blue-500 disabled:cursor-default disabled:opacity-40 dark:border-slate-600"
-				>
-					{showCode ? "Hide G-code" : "Show G-code"}
-				</button>
-				{status && <span className={`text-sm ${status.ok ? "text-green-600 dark:text-green-400" : "text-red-600 dark:text-red-400"}`}>{status.text}</span>}
-			</footer>
-		</div>
+			}
+			notices={<Notices errors={errors} warnings={warnings} info={info} />}
+			actions={
+				<>
+					<button type="button" onClick={runPreview} disabled={busy || !ready} className={fresh ? secondaryBtn : primaryBtn}>
+						{busy ? "Working…" : "Preview"}
+					</button>
+					<button type="button" onClick={send} disabled={!canLoad} className={fresh ? primaryBtn : secondaryBtn}>
+						Load to gSender
+					</button>
+				</>
+			}
+		/>
 	);
 };
 

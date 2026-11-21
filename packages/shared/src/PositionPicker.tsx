@@ -36,7 +36,7 @@ const PositionPicker = ({
 	<div className="flex flex-col gap-1">
 		<span className="text-xs font-medium text-gray-600 dark:text-slate-400">{label}</span>
 		<div
-			className="relative mx-auto w-full max-w-[280px] rounded-lg bg-gray-100 dark:bg-slate-800"
+			className="relative mx-auto w-full max-w-[300px] rounded-lg bg-gray-100 dark:bg-slate-800"
 			style={{ aspectRatio: `${BOX.W} / ${BOX.H}` }}
 		>
 			<svg viewBox={`0 0 ${BOX.W} ${BOX.H}`} className="absolute inset-0 h-full w-full text-blue-600 dark:text-blue-400" aria-hidden>
@@ -66,7 +66,7 @@ const PositionPicker = ({
 							aria-pressed={active}
 							title={POSITION_NAMES[s.pos]}
 							onClick={() => onChange(s.pos)}
-							className={`absolute h-10 w-10 -translate-x-1/2 -translate-y-1/2 cursor-pointer rounded-full border-2 transition active:scale-90 ${
+							className={`absolute h-12 w-12 -translate-x-1/2 -translate-y-1/2 cursor-pointer rounded-full border-2 transition active:scale-90 ${
 								active
 									? "border-blue-600 bg-blue-600 shadow-sm"
 									: "border-gray-400 bg-white hover:border-blue-500 dark:border-slate-500 dark:bg-slate-700"

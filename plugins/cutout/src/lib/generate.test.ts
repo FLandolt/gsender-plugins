@@ -2,9 +2,14 @@ import { describe, expect, it } from "vitest";
 
 import { buildMoves, generateGcode, lapCount, toolOutline, tabSpans } from "./generate";
 import { buildOutline } from "./outline";
+import { hasBlank, parseNumber } from "@shared/ui";
+
 import { check, defaultParams, type Params } from "./params";
 
-const base = (patch: Partial<Params> = {}): Params => ({ ...defaultParams(), ...patch });
+/** The defaults with a depth filled in (the plugin starts at 0 so the user has to enter one). */
+const testDefaults = (): Params => ({ ...defaultParams(), depth: 19 });
+
+const base = (patch: Partial<Params> = {}): Params => ({ ...testDefaults(), ...patch });
 
 describe("outline", () => {
 	it("sharp rectangle has the expected perimeter", () => {
@@ -83,7 +88,7 @@ describe("depth and tabs", () => {
 		expect(Math.min(...flatLap.map((m) => m.z))).toBeCloseTo(-p.depth);
 	});
 	it("rectangular tabs hold the tab top with vertical sides", () => {
-		const p = base({ tabs: { ...defaultParams().tabs, shape: "rectangular" } });
+		const p = base({ tabs: { ...testDefaults().tabs, shape: "rectangular" } });
 		const o = toolOutline(p);
 		const { spans } = tabSpans(p, o);
 		const moves = buildMoves(p, o, spans);
@@ -94,7 +99,7 @@ describe("depth and tabs", () => {
 		expect(Math.min(...moves.map((m) => m.z))).toBeCloseTo(-p.depth);
 	});
 	it("no tabs when disabled", () => {
-		const p = base({ tabs: { ...defaultParams().tabs, enabled: false } });
+		const p = base({ tabs: { ...testDefaults().tabs, enabled: false } });
 		expect(tabSpans(p, toolOutline(p)).spans).toHaveLength(0);
 	});
 	it("laps = ceil(depth / stepdown)", () => {
@@ -111,7 +116,7 @@ describe("gcode", () => {
 		for (const w of words) expect(["G0", "G1", "G4", "G17", "G21", "G90", "G94", "M3", "M5", "M30"]).toContain(w);
 	});
 	it("lower-left origin shifts X/Y into positive space", () => {
-		const { gcode } = generateGcode(base({ origin: "lower-left", mode: "part", tabs: { ...defaultParams().tabs, enabled: false } }));
+		const { gcode } = generateGcode(base({ origin: "lower-left", mode: "part", tabs: { ...testDefaults().tabs, enabled: false } }));
 		for (const m of gcode.matchAll(/ X(-?[\d.]+) Y(-?[\d.]+)/g)) {
 			expect(Number(m[1])).toBeGreaterThanOrEqual(-base().toolDiameter / 2 - 1e-6);
 			expect(Number(m[2])).toBeGreaterThanOrEqual(-base().toolDiameter / 2 - 1e-6);
@@ -128,5 +133,26 @@ describe("check", () => {
 	it("warns about sharp inside corners with a round bit", () => {
 		expect(check(base()).warnings.join(" ")).toMatch(/sharp inside corners/);
 		expect(check(base({ cornerRadius: 5 })).warnings).toHaveLength(0);
+	});
+});
+
+describe("defaults and empty boxes", () => {
+	it("starts with no depth and a 4 mm bit, and won't run until a depth is entered", () => {
+		expect(defaultParams().depth).toBe(0);
+		expect(defaultParams().toolDiameter).toBe(4);
+		expect(check(defaultParams()).errors.length).toBeGreaterThan(0);
+		expect(check({ ...defaultParams(), depth: 19 }).errors).toHaveLength(0);
+	});
+	it("reads typed numbers, and treats an empty or half-typed box as missing", () => {
+		expect(parseNumber("6")).toBe(6);
+		expect(parseNumber(" 2,5 ")).toBe(2.5);
+		expect(parseNumber(".5")).toBe(0.5);
+		expect(parseNumber("4.")).toBe(4);
+		for (const t of ["", "-", ".", "abc", "1e3", "4..2"]) expect(parseNumber(t)).toBeNaN();
+	});
+	it("spots an emptied box anywhere in the settings", () => {
+		expect(hasBlank(defaultParams())).toBe(false);
+		expect(hasBlank({ ...defaultParams(), safeZ: Number.NaN })).toBe(true);
+		expect(hasBlank({ ...defaultParams(), tabs: { ...defaultParams().tabs, height: Number.NaN } })).toBe(true);
 	});
 });
