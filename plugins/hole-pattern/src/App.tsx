@@ -7,7 +7,9 @@ import { isStandalone } from "@shared/mockBridge";
 import { formatMinutes, jobStats } from "@shared/stats";
 import { ArcIcon, LineIcon } from "@shared/icons";
 import PositionPicker from "@shared/PositionPicker";
-import { Card, NumberField, Segmented, SpeedPresets, Stat, Stepper, Notices } from "@shared/ui";
+import { CutSection, passCount, StepoverDiagram } from "@shared/diagrams";
+import PluginLayout, { PreviewPlaceholder, primaryBtn, StatRow, type Step } from "@shared/PluginLayout";
+import { BLANK_MESSAGE, hasBlank, Hint, lengthLabel, More, Notices, NumberField, Segmented, SpeedPresets, Stepper, Summary } from "@shared/ui";
 import { type Units, unitsScale } from "@shared/units";
 
 import { generateGcode } from "./lib/generate";
@@ -28,26 +30,19 @@ const App = () => {
 	const [base, setBase] = useState<Params>(defaultParams);
 	const [status, setStatus] = useState<{ ok: boolean; text: string } | null>(null);
 	const [busy, setBusy] = useState(false);
-	const [showCode, setShowCode] = useState(false);
 
 	// gSender owns the unit system; mirror it rather than letting the user pick.
 	const params = useMemo<Params>(() => ({ ...base, units }), [base, units]);
 	const errors = useMemo(() => validate(params), [params]);
-	const code = useMemo(() => (errors.length ? "" : generateGcode(params)), [params, errors]);
+	const code = useMemo(() => (errors.length || hasBlank(params) ? "" : generateGcode(params)), [params, errors]);
 	const previewCode = useDeferredValue(code);
 	const stats = useMemo(() => (code ? jobStats(code) : null), [code]);
 	const preset = matchFeedPreset(params);
 
 	const set = (key: NumKey, v: number) => setBase((b) => ({ ...b, [key]: v }));
 	/** Length-like fields are stored in mm but edited in workspace units. */
-	const len = (key: NumKey, label: string, step?: number) => (
-		<NumberField
-			label={label}
-			value={Number((params[key] / scale).toFixed(4))}
-			suffix={units}
-			step={step}
-			onChange={(v) => set(key, v * scale)}
-		/>
+	const len = (key: NumKey, label: string, required = false) => (
+		<NumberField label={label} value={Number((params[key] / scale).toFixed(4))} suffix={units} required={required} onChange={(v) => set(key, v * scale)} />
 	);
 
 	const total = params.countX * params.countY;
@@ -68,137 +63,157 @@ const App = () => {
 		}
 	};
 
-	return (
-		<div className="flex h-full flex-col bg-gray-50 text-gray-900 dark:bg-slate-950 dark:text-slate-100">
-			<div className="grid min-h-0 grow grid-cols-1 gap-4 overflow-auto p-4 lg:grid-cols-[minmax(340px,440px)_1fr] lg:overflow-hidden">
-				{/* Settings */}
-				<div className="flex flex-col gap-4 lg:min-h-0 lg:overflow-y-auto lg:pr-1">
-					<div>
-						<h1 className="m-0 text-xl font-semibold">Hole Pattern</h1>
-						<p className="m-0 mt-1 text-sm text-gray-500 dark:text-slate-400">
-							Zero the machine at the centre of the first hole, Z0 on top of the stock.
-						</p>
+	const blank = hasBlank(params);
+	const allErrors = blank ? [BLANK_MESSAGE, ...errors] : errors;
+	const bad = (...keys: NumKey[]) => keys.some((k) => !(params[k] > 0));
+	const passes = passCount(params.depth, params.stepdown);
+	const cornerName = params.origin.replace("-", " ").replace("lower", "bottom").replace("upper", "top");
+
+	const steps: Step[] = [
+		{
+			id: "hole",
+			label: "Hole & bit",
+			hint: "The hole to cut, the bit that cuts it and how deep. Z0 is the top of the stock.",
+			issue: bad("toolDiameter", "holeDiameter", "depth") || params.holeDiameter < params.toolDiameter - 1e-6,
+			content: (
+				<>
+					<div className="grid grid-cols-2 gap-3">
+						{len("toolDiameter", "Bit diameter", true)}
+						{len("holeDiameter", "Hole diameter", true)}
+						<div className="col-span-2">{len("depth", "Hole depth", true)}</div>
 					</div>
-
-					<Card title="Hole" hint="What gets cut">
-						<div className="grid grid-cols-2 gap-3">
-							{len("toolDiameter", "Tool diameter")}
-							{len("holeDiameter", "Hole diameter")}
-							<div className="col-span-2">{len("depth", "Hole depth")}</div>
-						</div>
-					</Card>
-
-					<Card title="Pattern" hint={`1 × 1 is a single hole · 1 × 2 adds a second one along Y`}>
-						<div className="grid grid-cols-2 gap-3">
-							<Stepper label="Holes in X" value={params.countX} onChange={(v) => set("countX", v)} />
-							<Stepper label="Holes in Y" value={params.countY} onChange={(v) => set("countY", v)} />
-							{params.countX > 1 ? len("spacingX", "Spacing X") : <div />}
-							{params.countY > 1 ? len("spacingY", "Spacing Y") : <div />}
-						</div>
-						{total > 1 && (
-							<div className="mt-3">
-								<PositionPicker
-									label="Zero (X0 Y0)"
-									hint={`Zero at the centre of the ${params.origin.replace("-", " ").replace("lower", "bottom").replace("upper", "top")} hole. The other holes extend away from it.`}
-									value={params.origin}
-									onChange={(origin) => origin !== "center" && setBase((b) => ({ ...b, origin }))}
-								/>
-							</div>
-						)}
-					</Card>
-
-					<Card title="Speed" hint={preset ? preset.hint : "Custom values"}>
-						<div className="mb-3">
-							<SpeedPresets
-								value={preset}
-								onPick={(f) => setBase((b) => ({ ...b, ...{ feedrate: f.feedrate, plungeRate: f.plungeRate, spindleRpm: f.spindleRpm, stepdown: f.stepdown } }))}
-							/>
-						</div>
-						<div className="grid grid-cols-2 gap-3">
-							<NumberField label="Cut feed" suffix={`${units}/min`} value={Number((params.feedrate / scale).toFixed(2))} onChange={(v) => set("feedrate", v * scale)} />
-							<NumberField label="Plunge feed" suffix={`${units}/min`} value={Number((params.plungeRate / scale).toFixed(2))} onChange={(v) => set("plungeRate", v * scale)} />
-							<NumberField label="Spindle" suffix="RPM" value={params.spindleRpm} onChange={(v) => set("spindleRpm", v)} />
-							{len("stepdown", "Stepdown")}
-						</div>
-						<details className="mt-3">
-							<summary className="cursor-pointer select-none text-sm text-gray-600 dark:text-slate-400">
-								More options
-							</summary>
-							<div className="mt-3 grid grid-cols-2 gap-3">
-								<NumberField label="Stepover" suffix="× tool" step={0.05} value={params.stepover} onChange={(v) => set("stepover", v)} />
-								{len("safeZ", "Safe Z")}
-								<NumberField label="Spindle ramp up" suffix="s" value={params.spindleDwell} onChange={(v) => set("spindleDwell", v)} />
-								<div className="col-span-2">
-									<Segmented
-	label="Circles and corners"
-	title="Smaller files and smoother motion. Turn off if your controller rejects arcs."
-	value={params.useArcs ? "arcs" : "lines"}
-	onChange={(v) => setBase((b) => ({ ...b, useArcs: v === "arcs" }))}
-	options={[
-		{ value: "arcs", label: "Arcs (G2/G3)", icon: <ArcIcon /> },
-		{ value: "lines", label: "Lines (G1)", icon: <LineIcon /> },
-	]}
-/>
-								</div>
-							</div>
-						</details>
-					</Card>
-
-				</div>
-
-				{/* Preview */}
-				<div className="flex min-h-96 min-w-0 flex-col gap-3 lg:min-h-0">
-					<div className="grid grid-cols-3 gap-2">
-						<Stat label="Holes" value={String(total)} />
-						<Stat label="Est. time" value={stats ? formatMinutes(stats.minutes) : "–"} />
-						<Stat label="G-code lines" value={stats ? stats.lines.toLocaleString() : "–"} />
+					<CutSection units={units} tool={params.toolDiameter} depth={params.depth} stepdown={params.stepdown} safeZ={params.safeZ} width={params.holeDiameter} />
+					<Hint>The bit spirals down level by level, then clears out to the hole's wall.</Hint>
+				</>
+			),
+		},
+		{
+			id: "pattern",
+			label: "Pattern",
+			hint: "1 × 1 is a single hole · 1 × 2 adds a second one along Y.",
+			issue:
+				!(params.countX >= 1) ||
+				!(params.countY >= 1) ||
+				(params.countX > 1 && !(params.spacingX >= params.holeDiameter)) ||
+				(params.countY > 1 && !(params.spacingY >= params.holeDiameter)),
+			content: (
+				<>
+					<div className="grid grid-cols-2 gap-3">
+						<Stepper label="Holes in X" value={params.countX} onChange={(v) => set("countX", v)} />
+						<Stepper label="Holes in Y" value={params.countY} onChange={(v) => set("countY", v)} />
+						{params.countX > 1 ? len("spacingX", "Spacing X", true) : <div />}
+						{params.countY > 1 ? len("spacingY", "Spacing Y", true) : <div />}
 					</div>
-					<div className="min-h-72 grow">
-						{previewCode ? (
-							<Suspense fallback={<div className="h-full rounded-xl bg-slate-950" />}>
-								<ToolpathView gcode={previewCode} units={units} toolDiameter={params.toolDiameter} />
-							</Suspense>
-						) : (
-							<div className="flex h-full items-center justify-center rounded-xl border border-dashed border-gray-300 text-sm text-gray-500 dark:border-slate-700">
-								Fix the warnings to see the toolpath.
-							</div>
-						)}
-					</div>
-					{showCode && code && (
-						<pre className="m-0 max-h-60 overflow-auto rounded-xl bg-gray-100 p-3 font-mono text-[11px] leading-relaxed dark:bg-slate-900">
-							{code}
-						</pre>
+					{total > 1 ? (
+						<PositionPicker
+							label="Zero (X0 Y0)"
+							hint={`Zero at the centre of the ${cornerName} hole. The other holes extend away from it.`}
+							value={params.origin}
+							onChange={(origin) => origin !== "center" && setBase((b) => ({ ...b, origin }))}
+						/>
+					) : (
+						<Hint>Zero the machine at the centre of the hole.</Hint>
 					)}
-				</div>
-			</div>
+				</>
+			),
+		},
+		{
+			id: "speed",
+			label: "Speed",
+			hint: preset ? preset.hint : "Custom values",
+			issue: bad("feedrate", "plungeRate", "stepdown") || !(params.stepover > 0 && params.stepover <= 1) || hasBlank([params.spindleRpm, params.safeZ, params.spindleDwell]),
+			content: (
+				<>
+					<SpeedPresets
+						value={preset}
+						onPick={(f) => setBase((b) => ({ ...b, feedrate: f.feedrate, plungeRate: f.plungeRate, spindleRpm: f.spindleRpm, stepdown: f.stepdown }))}
+					/>
+					<div className="grid grid-cols-2 gap-3">
+						<NumberField label="Cut feed" required suffix={`${units}/min`} value={Number((params.feedrate / scale).toFixed(2))} onChange={(v) => set("feedrate", v * scale)} />
+						<NumberField label="Plunge feed" required suffix={`${units}/min`} value={Number((params.plungeRate / scale).toFixed(2))} onChange={(v) => set("plungeRate", v * scale)} />
+						<NumberField label="Spindle" suffix="RPM" value={params.spindleRpm} onChange={(v) => set("spindleRpm", v)} />
+						{len("stepdown", "Stepdown", true)}
+					</div>
+					<CutSection units={units} tool={params.toolDiameter} depth={params.depth} stepdown={params.stepdown} safeZ={params.safeZ} width={params.holeDiameter} title="Passes" />
+					<More>
+						<div className="grid grid-cols-2 gap-3">
+							<NumberField label="Stepover" required suffix="× bit" value={params.stepover} onChange={(v) => set("stepover", v)} />
+							{len("safeZ", "Safe Z")}
+							<NumberField label="Spindle ramp up" suffix="s" value={params.spindleDwell} onChange={(v) => set("spindleDwell", v)} />
+						</div>
+						<StepoverDiagram units={units} tool={params.toolDiameter} stepover={params.stepover} />
+						<Segmented
+							label="Circles and corners"
+							value={params.useArcs ? "arcs" : "lines"}
+							onChange={(v) => setBase((b) => ({ ...b, useArcs: v === "arcs" }))}
+							options={[
+								{ value: "arcs", label: "Arcs (G2/G3)", icon: <ArcIcon /> },
+								{ value: "lines", label: "Lines (G1)", icon: <LineIcon /> },
+							]}
+						/>
+						<Hint>Arcs give smaller files and smoother motion. Pick lines if your controller rejects arcs.</Hint>
+					</More>
+				</>
+			),
+		},
+		{
+			id: "check",
+			label: "Check & load",
+			hint: "Look over the job, then load it into gSender. Always air-cut first.",
+			issue: allErrors.length > 0,
+			content: (
+				<>
+					<Summary
+						rows={[
+							["Holes", `${params.countX} × ${params.countY} = ${total}`],
+							["Hole", `Ø ${lengthLabel(params.holeDiameter, units)}`],
+							["Bit", `Ø ${lengthLabel(params.toolDiameter, units)}`],
+							["Depth", `${lengthLabel(params.depth, units)}${passes ? ` in ${passes} passes` : ""}`],
+							...(total > 1 ? ([["Spacing", `${params.countX > 1 ? `X ${lengthLabel(params.spacingX, units)}` : ""}${params.countX > 1 && params.countY > 1 ? " · " : ""}${params.countY > 1 ? `Y ${lengthLabel(params.spacingY, units)}` : ""}`]] as [string, string][]) : []),
+							["Zero", total > 1 ? `centre of the ${cornerName} hole` : "centre of the hole"],
+							["Feed / plunge", `${Number((params.feedrate / scale).toFixed(2))} / ${Number((params.plungeRate / scale).toFixed(2))} ${units}/min`],
+							["Spindle", `${params.spindleRpm} RPM`],
+							["Est. time", stats ? formatMinutes(stats.minutes) : "–"],
+						]}
+					/>
+					{allErrors.length > 0 && <Hint>Fix the items listed at the bottom (steps with a red dot) before loading.</Hint>}
+				</>
+			),
+		},
+	];
 
-			<Notices errors={errors} warnings={[]} />
-
-			{/* Action bar */}
-			<footer className="flex flex-wrap items-center gap-3 border-t border-gray-200 bg-white px-4 py-3 dark:border-slate-800 dark:bg-slate-900">
-				<button
-					type="button"
-					onClick={send}
-					disabled={busy || errors.length > 0}
-					className="h-12 cursor-pointer rounded-lg bg-blue-600 px-6 text-base font-semibold text-white shadow-sm transition hover:bg-blue-500 active:scale-95 disabled:cursor-default disabled:opacity-40"
-				>
+	return (
+		<PluginLayout
+			title="Hole Pattern"
+			intro="Zero at the centre of the first hole, Z0 on top of the stock."
+			steps={steps}
+			code={code}
+			status={status}
+			stats={
+				<StatRow
+					items={[
+						["Holes", String(total)],
+						["Est. time", stats ? formatMinutes(stats.minutes) : "–"],
+						["G-code lines", stats ? stats.lines.toLocaleString() : "–"],
+					]}
+				/>
+			}
+			preview={
+				previewCode ? (
+					<Suspense fallback={<div className="h-full rounded-xl bg-slate-950" />}>
+						<ToolpathView gcode={previewCode} units={units} toolDiameter={params.toolDiameter} />
+					</Suspense>
+				) : (
+					<PreviewPlaceholder />
+				)
+			}
+			notices={<Notices errors={allErrors} warnings={[]} />}
+			actions={
+				<button type="button" onClick={send} disabled={busy || !code || blank} className={primaryBtn}>
 					{busy ? "Loading…" : "Load to gSender"}
 				</button>
-				<button
-					type="button"
-					onClick={() => setShowCode((v) => !v)}
-					disabled={errors.length > 0}
-					className="h-12 cursor-pointer rounded-lg border border-gray-300 px-4 text-sm transition hover:border-blue-500 disabled:cursor-default disabled:opacity-40 dark:border-slate-600"
-				>
-					{showCode ? "Hide G-code" : "Show G-code"}
-				</button>
-				{status && (
-					<span className={`text-sm ${status.ok ? "text-green-600 dark:text-green-400" : "text-red-600 dark:text-red-400"}`}>
-						{status.text}
-					</span>
-				)}
-			</footer>
-		</div>
+			}
+		/>
 	);
 };
 

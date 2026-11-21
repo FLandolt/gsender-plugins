@@ -80,14 +80,14 @@ const ToolpathView = ({ gcode, units, toolDiameter, materialView = true, showBit
 	}, [diameter, showBit]);
 
 	return (
-		<div className="relative h-full min-h-72 w-full overflow-hidden rounded-lg bg-slate-950">
+		<div className="relative h-full min-h-40 w-full overflow-hidden rounded-lg bg-slate-950" style={{ touchAction: "none" }}>
 			<GCodeVisualizer
 				ref={viewerRef}
 				id="plugin-preview"
 				style={{ width: "100%", height: "100%" }}
 			/>
 			{materialView && (
-				<div className="absolute left-2 top-2 z-10 w-52 opacity-95">
+				<div className="absolute left-2 top-2 z-10 w-56 opacity-95">
 					<Segmented
 						value={view}
 						onChange={setView}

@@ -7,7 +7,10 @@ import { isStandalone } from "@shared/mockBridge";
 import { formatMinutes, jobStats } from "@shared/stats";
 import { ArcIcon, CircleIcon, LineIcon, RectIcon } from "@shared/icons";
 import PositionPicker from "@shared/PositionPicker";
-import { Card, NumberField, OnOff, Segmented, SliderField, SpeedPresets, Stat, Stepper, Notices } from "@shared/ui";
+import { CutSection, passCount, TabDiagram } from "@shared/diagrams";
+import PluginLayout, { PreviewPlaceholder, primaryBtn, StatRow, type Step } from "@shared/PluginLayout";
+import { POSITION_NAMES } from "@shared/position";
+import { BLANK_MESSAGE, hasBlank, Hint, lengthLabel, More, Notices, NumberField, OnOff, Segmented, SliderField, SpeedPresets, Stepper, Summary } from "@shared/ui";
 import { type Units, unitsScale } from "@shared/units";
 
 import { generateGcode } from "./lib/generate";
@@ -25,13 +28,13 @@ const App = () => {
 	const [base, setBase] = useState<Params>(defaultParams);
 	const [status, setStatus] = useState<{ ok: boolean; text: string } | null>(null);
 	const [busy, setBusy] = useState(false);
-	const [showCode, setShowCode] = useState(false);
 
 	// gSender owns the unit system; mirror it rather than letting the user pick.
 	const params = useMemo<Params>(() => ({ ...base, units }), [base, units]);
 	const problems = useMemo(() => check(params), [params]);
 	const result = useMemo(
-		() => (problems.errors.length ? null : generateGcode(params)),
+		// An emptied box blocks the job even where no other check covers it.
+		() => (problems.errors.length || hasBlank(params) ? null : generateGcode(params)),
 		[params, problems],
 	);
 	const code = result?.gcode ?? "";
@@ -45,8 +48,8 @@ const App = () => {
 		setBase((b) => ({ ...b, tabs: { ...b.tabs, ...patch } }));
 
 	const shown = (mm: number) => Number((mm / scale).toFixed(4));
-	const len = (label: string, mm: number, set: (mm: number) => void) => (
-		<NumberField label={label} value={shown(mm)} suffix={units} onChange={(v) => set(v * scale)} />
+	const len = (label: string, mm: number, set: (mm: number) => void, required = false) => (
+		<NumberField label={label} value={shown(mm)} suffix={units} required={required} onChange={(v) => set(v * scale)} />
 	);
 
 	const send = async () => {
@@ -68,203 +71,227 @@ const App = () => {
 		}
 	};
 
-	return (
-		<div className="flex h-full flex-col bg-gray-50 text-gray-900 dark:bg-slate-950 dark:text-slate-100">
-			<div className="grid min-h-0 grow grid-cols-1 gap-4 overflow-auto p-4 lg:grid-cols-[minmax(340px,440px)_1fr] lg:overflow-hidden">
-				<div className="flex flex-col gap-4 lg:min-h-0 lg:overflow-y-auto lg:pr-1">
-					<div>
-						<h1 className="m-0 text-xl font-semibold">Cutout</h1>
-						<p className="m-0 mt-1 text-sm text-gray-500 dark:text-slate-400">
-							Cuts a rectangle (optionally with rounded corners) or a circle, with holding tabs. Z0 = top of stock.
-						</p>
-					</div>
+	const round = params.shape === "circle";
+	const blank = hasBlank(params);
+	const errors = blank ? [BLANK_MESSAGE, ...problems.errors] : problems.errors;
+	const has = (...keys: (keyof Params)[]) => keys.some((k) => !(Number(params[k]) > 0));
+	const tabsBad = params.tabs.enabled && (!(params.tabs.length > 0) || !(params.tabs.height > 0) || !(params.tabs.perSide >= 1) || (params.depth > 0 && params.tabs.height >= params.depth));
 
-					<Card title="Shape">
-						<div className="flex flex-col gap-3">
-							<Segmented
-								value={params.shape}
-								onChange={(shape) =>
-									// A circle wants a few tabs around it; a rectangle one per side.
-									setBase((b) => ({ ...b, shape, tabs: { ...b.tabs, perSide: shape === "circle" ? 4 : 1 } }))
-								}
-								options={[
-									{ value: "rectangle", label: "Rectangle", icon: <RectIcon /> },
-									{ value: "circle", label: "Circle", icon: <CircleIcon /> },
-								]}
-							/>
-							{params.shape === "circle" ? (
-								len("Diameter", params.diameter, (v) => update({ diameter: v }))
-							) : (
-								<div className="grid grid-cols-2 gap-3">
-									{len("Width (X)", params.width, (v) => update({ width: v }))}
-									{len("Height (Y)", params.height, (v) => update({ height: v }))}
-									<div className="col-span-2">
-										<SliderField
-											label="Corner radius (0 = sharp)"
-											suffix={units}
-											value={shown(params.cornerRadius)}
-											min={0}
-											max={shown(Math.min(params.width, params.height) / 2)}
-											onChange={(v) => update({ cornerRadius: Math.max(0, v) * scale })}
-										/>
-									</div>
-								</div>
-							)}
-						</div>
-					</Card>
-
-					<Card title="Cut" hint="Which side of the line the bit runs on">
-						<div className="flex flex-col gap-3">
-							<Segmented
-								value={params.mode}
-								onChange={(mode) => update({ mode })}
-								options={[
-									{ value: "hole", label: "Inside" },
-									{ value: "part", label: "Outside" },
-								]}
-							/>
-							<p className="m-0 text-xs text-gray-500 dark:text-slate-400">
-								{params.mode === "hole"
-									? `Inside: the bit runs inside the line and the ${params.shape} is removed, the material around it stays.`
-									: `Outside: the bit runs outside the line and the ${params.shape} is kept.`}
-							</p>
-							<div className="grid grid-cols-2 gap-3">
-								{len("Tool diameter", params.toolDiameter, (v) => update({ toolDiameter: v }))}
-								{len("Cut depth", params.depth, (v) => update({ depth: v }))}
-							</div>
-							<PositionPicker
-								label="Zero (X0 Y0)"
-								centre
-								value={params.origin}
-								onChange={(origin) => update({ origin })}
-							/>
-						</div>
-					</Card>
-
-					<Card title="Tabs" hint="Small bridges that keep the cut piece from moving">
-						<div className="flex flex-col gap-3">
-							<OnOff label="Use tabs" value={params.tabs.enabled} onChange={(enabled) => updateTabs({ enabled })} />
-							{params.tabs.enabled && (
-								<div className="grid grid-cols-2 gap-3">
-									<div className="col-span-2">
-										<Segmented
-											value={params.tabs.shape}
-											onChange={(shape) => updateTabs({ shape })}
-											options={[
-												{ value: "trapezoid", label: "Trapezoid" },
-												{ value: "rectangular", label: "Rectangular" },
-											]}
-										/>
-										<p className="m-0 mt-2 text-xs text-gray-500 dark:text-slate-400">
-											{params.tabs.shape === "trapezoid"
-												? "Sloped sides: the bit climbs over the tab, easier on the cutter."
-												: "Vertical sides: the bit stops, lifts and drops. Simple, but harder on the cutter."}
-										</p>
-									</div>
-									<div className="col-span-2">
-										<Stepper label={params.shape === "circle" ? "Number of tabs" : "Tabs per side"} value={params.tabs.perSide} max={params.shape === "circle" ? 8 : 4} onChange={(perSide) => updateTabs({ perSide })} />
-									</div>
-									{len(params.tabs.shape === "trapezoid" ? "Tab length (base)" : "Tab length", params.tabs.length, (length) => updateTabs({ length }))}
-									{len("Tab height", params.tabs.height, (height) => updateTabs({ height }))}
-								</div>
-							)}
-						</div>
-					</Card>
-
-					<Card title="Speed" hint={preset ? preset.hint : "Custom values"}>
-						<div className="mb-3">
-							<SpeedPresets
-								value={preset}
-								onPick={(f) => update({ feedrate: f.feedrate, plungeRate: f.plungeRate, spindleRpm: f.spindleRpm, stepdown: f.stepdown })}
-							/>
-						</div>
+	const steps: Step[] = [
+		{
+			id: "shape",
+			label: "Shape",
+			hint: "What gets cut out, and where X0 Y0 is. Z0 is the top of the stock.",
+			issue: round ? has("diameter") : has("width", "height") || params.cornerRadius > Math.min(params.width, params.height) / 2 + 1e-9,
+			content: (
+				<>
+					<Segmented
+						value={params.shape}
+						onChange={(shape) =>
+							// A circle wants a few tabs around it; a rectangle one per side.
+							setBase((b) => ({ ...b, shape, tabs: { ...b.tabs, perSide: shape === "circle" ? 4 : 1 } }))
+						}
+						options={[
+							{ value: "rectangle", label: "Rectangle", icon: <RectIcon /> },
+							{ value: "circle", label: "Circle", icon: <CircleIcon /> },
+						]}
+					/>
+					{round ? (
+						len("Diameter", params.diameter, (v) => update({ diameter: v }))
+					) : (
 						<div className="grid grid-cols-2 gap-3">
-							<NumberField label="Cut feed" suffix={`${units}/min`} value={shown(params.feedrate)} onChange={(v) => update({ feedrate: v * scale })} />
-							<NumberField label="Plunge feed" suffix={`${units}/min`} value={shown(params.plungeRate)} onChange={(v) => update({ plungeRate: v * scale })} />
-							<NumberField label="Spindle" suffix="RPM" value={params.spindleRpm} onChange={(v) => update({ spindleRpm: v })} />
-							{len("Stepdown", params.stepdown, (v) => update({ stepdown: v }))}
-						</div>
-						<details className="mt-3">
-							<summary className="cursor-pointer select-none text-sm text-gray-600 dark:text-slate-400">More options</summary>
-							<div className="mt-3 flex flex-col gap-3">
-								<Segmented
-									label="Cutting direction"
-									value={params.direction}
-									onChange={(direction) => update({ direction })}
-									options={[
-										{ value: "climb", label: "Climb" },
-										{ value: "conventional", label: "Conventional" },
-									]}
+							{len("Width (X)", params.width, (v) => update({ width: v }))}
+							{len("Height (Y)", params.height, (v) => update({ height: v }))}
+							<div className="col-span-2">
+								<SliderField
+									label="Corner radius (0 = sharp)"
+									suffix={units}
+									value={shown(params.cornerRadius)}
+									min={0}
+									max={shown(Math.min(params.width, params.height) / 2)}
+									onChange={(v) => update({ cornerRadius: Math.max(0, v) * scale })}
 								/>
-								<div className="grid grid-cols-2 gap-3">
-									{len("Safe Z", params.safeZ, (v) => update({ safeZ: v }))}
-									<NumberField label="Spindle ramp up" suffix="s" value={params.spindleDwell} onChange={(v) => update({ spindleDwell: v })} />
-								</div>
-								<Segmented
-	label="Circles and corners"
-	title="Smaller files and smoother motion. Turn off if your controller rejects arcs."
-	value={params.useArcs ? "arcs" : "lines"}
-	onChange={(v) => update({ useArcs: v === "arcs" })}
-	options={[
-		{ value: "arcs", label: "Arcs (G2/G3)", icon: <ArcIcon /> },
-		{ value: "lines", label: "Lines (G1)", icon: <LineIcon /> },
-	]}
-/>
 							</div>
-						</details>
-					</Card>
-
-				</div>
-
-				<div className="flex min-h-96 min-w-0 flex-col gap-3 lg:min-h-0">
-					<div className="grid grid-cols-3 gap-2">
-						<Stat label="Size" value={params.shape === "circle" ? `Ø ${shown(params.diameter)} ${units}` : `${shown(params.width)} × ${shown(params.height)} ${units}`} />
-						<Stat label="Est. time" value={stats ? formatMinutes(stats.minutes) : "–"} />
-						<Stat label="G-code lines" value={stats ? stats.lines.toLocaleString() : "–"} />
-					</div>
-					<div className="min-h-72 grow">
-						{previewCode ? (
-							<Suspense fallback={<div className="h-full rounded-xl bg-slate-950" />}>
-								<ToolpathView gcode={previewCode} units={units} toolDiameter={params.toolDiameter} />
-							</Suspense>
-						) : (
-							<div className="flex h-full items-center justify-center rounded-xl border border-dashed border-gray-300 text-sm text-gray-500 dark:border-slate-700">
-								Fix the warnings to see the toolpath.
-							</div>
-						)}
-					</div>
-					{showCode && code && (
-						<pre className="m-0 max-h-60 overflow-auto rounded-xl bg-gray-100 p-3 font-mono text-[11px] leading-relaxed dark:bg-slate-900">
-							{code}
-						</pre>
+						</div>
 					)}
-				</div>
-			</div>
+					<PositionPicker label="Zero (X0 Y0)" centre value={params.origin} onChange={(origin) => update({ origin })} />
+				</>
+			),
+		},
+		{
+			id: "cut",
+			label: "Bit & depth",
+			hint: "Which side of the line the bit runs on, the bit's size and how deep to cut.",
+			issue: has("toolDiameter", "depth"),
+			content: (
+				<>
+					<Segmented
+						label="Cut"
+						value={params.mode}
+						onChange={(mode) => update({ mode })}
+						options={[
+							{ value: "hole", label: "Inside the line" },
+							{ value: "part", label: "Outside the line" },
+						]}
+					/>
+					<Hint>
+						{params.mode === "hole"
+							? `Inside: the bit runs inside the line and the ${params.shape} is removed, the material around it stays.`
+							: `Outside: the bit runs outside the line and the ${params.shape} is kept.`}
+					</Hint>
+					<div className="grid grid-cols-2 gap-3">
+						{len("Bit diameter", params.toolDiameter, (v) => update({ toolDiameter: v }), true)}
+						{len("Cut depth", params.depth, (v) => update({ depth: v }), true)}
+					</div>
+					<Hint>Cut depth: the thickness of your stock plus a little, so the piece comes free.</Hint>
+					<CutSection
+						units={units}
+						tool={params.toolDiameter}
+						depth={params.depth}
+						stepdown={params.stepdown}
+						safeZ={params.safeZ}
+						tabHeight={params.tabs.enabled ? params.tabs.height : undefined}
+						line={params.mode === "hole" ? "right" : "left"}
+						leftLabel={params.mode === "hole" ? "waste" : round ? "circle (kept)" : "part (kept)"}
+						rightLabel={params.mode === "hole" ? "kept" : "waste"}
+					/>
+					<Hint>The red dashed line is the outline you entered; the bit stays on the waste side of it.</Hint>
+				</>
+			),
+		},
+		{
+			id: "tabs",
+			label: "Tabs",
+			hint: "Small bridges that keep the cut piece from moving.",
+			issue: tabsBad,
+			content: (
+				<>
+					<OnOff label="Use tabs" value={params.tabs.enabled} onChange={(enabled) => updateTabs({ enabled })} />
+					{params.tabs.enabled && (
+						<>
+							<Segmented
+								value={params.tabs.shape}
+								onChange={(shape) => updateTabs({ shape })}
+								options={[
+									{ value: "trapezoid", label: "Trapezoid" },
+									{ value: "rectangular", label: "Rectangular" },
+								]}
+							/>
+							<Stepper label={round ? "Number of tabs" : "Tabs per side"} value={params.tabs.perSide} max={round ? 8 : 4} onChange={(perSide) => updateTabs({ perSide })} />
+							<div className="grid grid-cols-2 gap-3">
+								{len(params.tabs.shape === "trapezoid" ? "Tab length (base)" : "Tab length", params.tabs.length, (length) => updateTabs({ length }), true)}
+								{len("Tab height", params.tabs.height, (height) => updateTabs({ height }), true)}
+							</div>
+							<TabDiagram units={units} length={params.tabs.length} height={params.tabs.height} depth={params.depth} shape={params.tabs.shape} tool={params.toolDiameter} />
+						</>
+					)}
+				</>
+			),
+		},
+		{
+			id: "speed",
+			label: "Speed",
+			hint: preset ? preset.hint : "Custom values",
+			issue: has("feedrate", "plungeRate", "stepdown") || hasBlank([params.spindleRpm, params.safeZ, params.spindleDwell]),
+			content: (
+				<>
+					<SpeedPresets
+						value={preset}
+						onPick={(f) => update({ feedrate: f.feedrate, plungeRate: f.plungeRate, spindleRpm: f.spindleRpm, stepdown: f.stepdown })}
+					/>
+					<div className="grid grid-cols-2 gap-3">
+						<NumberField label="Cut feed" required suffix={`${units}/min`} value={shown(params.feedrate)} onChange={(v) => update({ feedrate: v * scale })} />
+						<NumberField label="Plunge feed" required suffix={`${units}/min`} value={shown(params.plungeRate)} onChange={(v) => update({ plungeRate: v * scale })} />
+						<NumberField label="Spindle" suffix="RPM" value={params.spindleRpm} onChange={(v) => update({ spindleRpm: v })} />
+						{len("Stepdown", params.stepdown, (v) => update({ stepdown: v }), true)}
+					</div>
+					<CutSection units={units} tool={params.toolDiameter} depth={params.depth} stepdown={params.stepdown} safeZ={params.safeZ} title="Passes" />
+					<More>
+						<Segmented
+							label="Cutting direction"
+							value={params.direction}
+							onChange={(direction) => update({ direction })}
+							options={[
+								{ value: "climb", label: "Climb" },
+								{ value: "conventional", label: "Conventional" },
+							]}
+						/>
+						<div className="grid grid-cols-2 gap-3">
+							{len("Safe Z", params.safeZ, (v) => update({ safeZ: v }))}
+							<NumberField label="Spindle ramp up" suffix="s" value={params.spindleDwell} onChange={(v) => update({ spindleDwell: v })} />
+						</div>
+						<Segmented
+							label="Circles and corners"
+							value={params.useArcs ? "arcs" : "lines"}
+							onChange={(v) => update({ useArcs: v === "arcs" })}
+							options={[
+								{ value: "arcs", label: "Arcs (G2/G3)", icon: <ArcIcon /> },
+								{ value: "lines", label: "Lines (G1)", icon: <LineIcon /> },
+							]}
+						/>
+						<Hint>Arcs give smaller files and smoother motion. Pick lines if your controller rejects arcs.</Hint>
+					</More>
+				</>
+			),
+		},
+		{
+			id: "check",
+			label: "Check & load",
+			hint: "Look over the job, then load it into gSender. Always air-cut first.",
+			issue: errors.length > 0,
+			content: (
+				<>
+					<Summary
+						rows={[
+							["Shape", round ? `Circle Ø ${lengthLabel(params.diameter, units)}` : `${lengthLabel(params.width, units)} × ${lengthLabel(params.height, units)}${params.cornerRadius > 0 ? `, r ${lengthLabel(params.cornerRadius, units)}` : ""}`],
+							["Cut", params.mode === "hole" ? "Inside the line" : "Outside the line"],
+							["Bit", `Ø ${lengthLabel(params.toolDiameter, units)}`],
+							["Depth", `${lengthLabel(params.depth, units)}${passCount(params.depth, params.stepdown) ? ` in ${passCount(params.depth, params.stepdown)} passes` : ""}`],
+							["Tabs", params.tabs.enabled ? `${round ? params.tabs.perSide : params.tabs.perSide * 4} × ${params.tabs.shape}, ${lengthLabel(params.tabs.length, units)} × ${lengthLabel(params.tabs.height, units)}` : "None"],
+							["Zero", POSITION_NAMES[params.origin]],
+							["Feed / plunge", `${shown(params.feedrate)} / ${shown(params.plungeRate)} ${units}/min`],
+							["Spindle", `${params.spindleRpm} RPM`],
+							["Est. time", stats ? formatMinutes(stats.minutes) : "–"],
+						]}
+					/>
+					{errors.length > 0 && <Hint>Fix the items listed at the bottom (steps with a red dot) before loading.</Hint>}
+				</>
+			),
+		},
+	];
 
-			<Notices errors={problems.errors} warnings={warnings} />
-
-			<footer className="flex flex-wrap items-center gap-3 border-t border-gray-200 bg-white px-4 py-3 dark:border-slate-800 dark:bg-slate-900">
-				<button
-					type="button"
-					onClick={send}
-					disabled={busy || !code}
-					className="h-12 cursor-pointer rounded-lg bg-blue-600 px-6 text-base font-semibold text-white shadow-sm transition hover:bg-blue-500 active:scale-95 disabled:cursor-default disabled:opacity-40"
-				>
+	return (
+		<PluginLayout
+			title="Cutout"
+			intro="Cuts a rectangle or circle out, with holding tabs. Z0 = top of stock."
+			steps={steps}
+			code={code}
+			status={status}
+			stats={
+				<StatRow
+					items={[
+						["Size", round ? `Ø ${shown(params.diameter)} ${units}` : `${shown(params.width)} × ${shown(params.height)} ${units}`],
+						["Est. time", stats ? formatMinutes(stats.minutes) : "–"],
+						["G-code lines", stats ? stats.lines.toLocaleString() : "–"],
+					]}
+				/>
+			}
+			preview={
+				previewCode ? (
+					<Suspense fallback={<div className="h-full rounded-xl bg-slate-950" />}>
+						<ToolpathView gcode={previewCode} units={units} toolDiameter={params.toolDiameter} />
+					</Suspense>
+				) : (
+					<PreviewPlaceholder />
+				)
+			}
+			notices={<Notices errors={errors} warnings={warnings} />}
+			actions={
+				<button type="button" onClick={send} disabled={busy || !code} className={primaryBtn}>
 					{busy ? "Loading…" : "Load to gSender"}
 				</button>
-				<button
-					type="button"
-					onClick={() => setShowCode((v) => !v)}
-					disabled={!code}
-					className="h-12 cursor-pointer rounded-lg border border-gray-300 px-4 text-sm transition hover:border-blue-500 disabled:cursor-default disabled:opacity-40 dark:border-slate-600"
-				>
-					{showCode ? "Hide G-code" : "Show G-code"}
-				</button>
-				{status && (
-					<span className={`text-sm ${status.ok ? "text-green-600 dark:text-green-400" : "text-red-600 dark:text-red-400"}`}>{status.text}</span>
-				)}
-			</footer>
-		</div>
+			}
+		/>
 	);
 };
 

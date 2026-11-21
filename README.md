@@ -20,7 +20,12 @@ All plugins:
 
 - Write `G0`/`G1` moves and, where the shape has circles or rounded corners, by default `G2`/`G3` arcs (V-Carve writes straight moves only) (smaller files, smoother motion). Pick **Lines (G1)** under *More options* to get short `G1` chords instead. No canned cycles and no cutter compensation, so the output runs on GRBL 1.1 and grblHAL.
 - Show a 3D toolpath preview using gSender's own viewer, with the bit drawn at your tool diameter. Switch the preview to **Material** to run the viewer's cut simulation and see what is left of a block of stock, so any uncut area stands out.
-- Keep problems and warnings in a strip above the buttons, so they stay visible however far you scroll the settings.
+- Walk you through the settings in steps (tap a step's tab to jump straight to it, or use Back / Next). A red dot marks a step that still needs something, and the last step sums up the job before you load it.
+- Keep the preview on screen all the time: beside the settings on a landscape screen, above them on a portrait (9:16) or narrow one. Only the settings scroll.
+- Draw what the numbers mean as you type them: the bit in its cut seen from the side (diameter, depth, one line per pass, safe Z), the stepover seen from above, and the holding tabs.
+- Are made for touch screens: big buttons and sliders, and tapping a number box selects it so you can type over it. A box can be cleared completely before typing a new value (a comma works as the decimal mark too).
+- Won't generate or load anything while a box is empty or a needed value is 0. The depth starts at 0 on purpose, so you always enter it for your stock; the bit starts at 4 mm.
+- Keep problems and warnings in a strip above the buttons, so they stay visible on every step.
 - Offer **Slow**, **Medium** and **High** speed presets, or your own feed, plunge, spindle and stepdown values.
 - Work in millimetres or inches.
 - Load the program straight into gSender with **Load to gSender**.

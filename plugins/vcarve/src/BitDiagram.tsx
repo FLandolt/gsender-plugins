@@ -54,7 +54,7 @@ const BitDiagram = ({ bit, maxDepth, tooDeep, units }: { bit: CheckedBit | null;
 
 	return (
 		<div className="mt-3 text-gray-700 dark:text-slate-300">
-			<svg viewBox={`0 0 ${W} ${H}`} className="w-full" role="img" aria-label={`A ${bit.angle} degree V-bit, ${len(bit.diameter)} wide, and the groove it cuts at the depth you set`}>
+			<svg viewBox={`0 0 ${W} ${H}`} className="mx-auto block w-full" style={{ maxHeight: 260 }} role="img" aria-label={`A ${bit.angle} degree V-bit, ${len(bit.diameter)} wide, and the groove it cuts at the depth you set`}>
 				{/* The bit: shank above, cone below */}
 				<rect x={bx - shankHalf} y={coneTop - shank * s} width={2 * shankHalf} height={shank * s} fill="#cbd5e1" stroke="#94a3b8" strokeWidth="1" />
 				<polygon points={poly.map((p) => p.join(",")).join(" ")} fill="#60a5fa" stroke="#2563eb" strokeWidth="1.2" />

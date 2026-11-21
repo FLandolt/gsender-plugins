@@ -70,7 +70,8 @@ export const defaultParams = (): Params => ({
 	direction: "climb",
 	origin: "center",
 	toolDiameter: 4,
-	depth: 19,
+	// No depth until one is entered: it depends on the stock, so the job can't run on a guess.
+	depth: 0,
 	feedrate: 1200,
 	plungeRate: 400,
 	spindleRpm: 15000,
@@ -93,7 +94,7 @@ export const check = (p: Params): Problems => {
 	if (round) {
 		if (!(p.diameter > 0)) errors.push("Diameter must be greater than 0.");
 	} else if (!(p.width > 0) || !(p.height > 0)) errors.push("Width and height must be greater than 0.");
-	if (!(p.depth > 0)) errors.push("Cut depth must be greater than 0.");
+	if (!(p.depth > 0)) errors.push(p.depth === 0 ? "Set the cut depth: the thickness of your stock plus a little." : "Cut depth must be greater than 0.");
 	if (!(p.stepdown > 0)) errors.push("Stepdown must be greater than 0.");
 	if (!(p.feedrate > 0) || !(p.plungeRate > 0)) errors.push("Feed and plunge rates must be greater than 0.");
 	if (!round) {
@@ -114,7 +115,7 @@ export const check = (p: Params): Problems => {
 	if (p.tabs.enabled) {
 		if (p.tabs.perSide < 1 || !Number.isInteger(p.tabs.perSide)) errors.push(round ? "The number of tabs must be a whole number of at least 1." : "Tabs per side must be a whole number of at least 1.");
 		if (p.tabs.length <= 0 || p.tabs.height <= 0) errors.push("Tab length and height must be greater than 0.");
-		if (p.tabs.height >= p.depth) warnings.push("Tab height is as tall as the cut — nothing would be cut through.");
+		if (p.depth > 0 && p.tabs.height >= p.depth) warnings.push("Tab height is as tall as the cut — nothing would be cut through.");
 	}
 	return { errors, warnings };
 };

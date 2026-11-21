@@ -45,7 +45,8 @@ export const defaultParams = (): Params => ({
 	units: "mm",
 	toolDiameter: 4,
 	holeDiameter: 10,
-	depth: 5,
+	// No depth until one is entered: it depends on the stock, so the job can't run on a guess.
+	depth: 0,
 	countX: 1,
 	countY: 1,
 	spacingX: 20,
@@ -68,7 +69,7 @@ export const validate = (p: Params): string[] => {
 	if (!(p.holeDiameter > 0)) errors.push("Hole diameter must be greater than 0.");
 	if (p.holeDiameter < p.toolDiameter - 1e-6)
 		errors.push("Hole diameter is smaller than the tool — the bit cannot cut it.");
-	if (!(p.depth > 0)) errors.push("Depth must be greater than 0.");
+	if (!(p.depth > 0)) errors.push(p.depth === 0 ? "Set the hole depth." : "Depth must be greater than 0.");
 	if (!(p.stepdown > 0)) errors.push("Stepdown must be greater than 0.");
 	if (!(p.stepover > 0 && p.stepover <= 1))
 		errors.push("Stepover must be between 0 and 1.");

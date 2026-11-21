@@ -7,7 +7,10 @@ import { jobStats } from "@shared/stats";
 import { generateGcode, mapPoint, OVERSHOOT, passPositions, zLevels } from "./generate";
 import { check, defaultParams, describeStart, type Params } from "./params";
 
-const job = (patch: Partial<Params> = {}): Params => ({ ...defaultParams(), ...patch });
+/** The defaults with a depth filled in (the plugin starts at 0 so the user has to enter one). */
+const testDefaults = (): Params => ({ ...defaultParams(), toolDiameter: 6, depth: 1 });
+
+const job = (patch: Partial<Params> = {}): Params => ({ ...testDefaults(), ...patch });
 const strip = (g: string) => g.replace(/\([^)]*\)/g, "");
 const cuts = (segs: Segment[]) => segs.filter((s) => s.kind === "line" && (s.from.x !== s.to.x || s.from.y !== s.to.y));
 const corners: Pick<Params, "startX" | "startY">[] = [
@@ -197,9 +200,17 @@ describe("units", () => {
 
 describe("check", () => {
 	it("accepts the defaults and rejects bad input", () => {
-		expect(check(defaultParams()).errors).toHaveLength(0);
+		expect(check(testDefaults()).errors).toHaveLength(0);
 		expect(check(job({ width: 0 })).errors).not.toHaveLength(0);
 		expect(check(job({ stepover: 1.5 })).errors).not.toHaveLength(0);
 		expect(check(job({ stepover: 0.95 })).warnings).not.toHaveLength(0);
+	});
+});
+
+describe("defaults", () => {
+	it("starts with no depth and a 4 mm bit, and won't run until a depth is entered", () => {
+		expect(defaultParams().depth).toBe(0);
+		expect(defaultParams().toolDiameter).toBe(4);
+		expect(check(defaultParams()).errors).not.toHaveLength(0);
 	});
 });

@@ -8,7 +8,10 @@ import { generateGcode } from "./generate";
 import { toolRegion, zLevels } from "./geometry";
 import { check, defaultParams, type Params } from "./params";
 
-const job = (patch: Partial<Params> = {}): Params => ({ ...defaultParams(), ...patch });
+/** The defaults with a depth filled in (the plugin starts at 0 so the user has to enter one). */
+const testDefaults = (): Params => ({ ...defaultParams(), toolDiameter: 6, depth: 6 });
+
+const job = (patch: Partial<Params> = {}): Params => ({ ...testDefaults(), ...patch });
 const strip = (g: string) => g.replace(/\([^)]*\)/g, "");
 const words = (g: string) => new Set([...strip(g).matchAll(/\b([GM]\d+)\b/g)].map((m) => m[1]));
 const cutting = (segs: Segment[]) => segs.filter((s) => s.kind !== "rapid");
@@ -323,12 +326,20 @@ describe("units", () => {
 
 describe("check", () => {
 	it("accepts the defaults and rejects bad input", () => {
-		expect(check(defaultParams()).errors).toHaveLength(0);
+		expect(check(testDefaults()).errors).toHaveLength(0);
 		expect(check(job({ width: 0 })).errors).not.toHaveLength(0);
 		expect(check(job({ width: 5, toolDiameter: 6 })).errors.join(" ")).toMatch(/wider than the tool/);
 		expect(check(job({ shape: "circle", diameter: 6 })).errors.join(" ")).toMatch(/wider than the tool/);
 		expect(check(job({ cornerRadius: 40 })).errors).not.toHaveLength(0);
 		expect(check(job({ stepover: 1.5 })).errors).not.toHaveLength(0);
 		expect(check(job({ shape: "circle", diameter: 40 })).errors).toHaveLength(0);
+	});
+});
+
+describe("defaults", () => {
+	it("starts with no depth and a 4 mm bit, and won't run until a depth is entered", () => {
+		expect(defaultParams().depth).toBe(0);
+		expect(defaultParams().toolDiameter).toBe(4);
+		expect(check(defaultParams()).errors).not.toHaveLength(0);
 	});
 });

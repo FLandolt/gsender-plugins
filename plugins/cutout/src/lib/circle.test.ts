@@ -6,15 +6,18 @@ import { buildMoves, generateGcode, toolOutline, tabSpans } from "./generate";
 import { buildCircleOutline, reverseOutline } from "./outline";
 import { check, defaultParams, type Params } from "./params";
 
+/** The defaults with a depth filled in (the plugin starts at 0 so the user has to enter one). */
+const testDefaults = (): Params => ({ ...defaultParams(), depth: 19 });
+
 const circle = (patch: Partial<Params> = {}): Params => ({
-	...defaultParams(),
+	...testDefaults(),
 	shape: "circle",
 	diameter: 50,
 	depth: 6,
-	tabs: { ...defaultParams().tabs, perSide: 4 },
+	tabs: { ...testDefaults().tabs, perSide: 4 },
 	...patch,
 });
-const noTabs = { ...defaultParams().tabs, enabled: false };
+const noTabs = { ...testDefaults().tabs, enabled: false };
 const strip = (g: string) => g.replace(/\([^)]*\)/g, "");
 
 describe("circle outline", () => {
@@ -45,7 +48,7 @@ describe("circle outline", () => {
 describe.each([
 	{ name: "inside, mm", patch: {} as Partial<Params>, mmPerUnit: 1, decimals: 3 },
 	{ name: "outside, conventional, mm", patch: { mode: "part", direction: "conventional" } as Partial<Params>, mmPerUnit: 1, decimals: 3 },
-	{ name: "inside, rectangular tabs", patch: { tabs: { ...defaultParams().tabs, perSide: 3, shape: "rectangular" } } as Partial<Params>, mmPerUnit: 1, decimals: 3 },
+	{ name: "inside, rectangular tabs", patch: { tabs: { ...testDefaults().tabs, perSide: 3, shape: "rectangular" } } as Partial<Params>, mmPerUnit: 1, decimals: 3 },
 	{ name: "inside, lower-left zero, inch", patch: { origin: "lower-left", units: "in" } as Partial<Params>, mmPerUnit: 25.4, decimals: 4 },
 	{ name: "inside, no tabs", patch: { tabs: noTabs } as Partial<Params>, mmPerUnit: 1, decimals: 3 },
 ])("circle cutout ($name)", ({ patch, mmPerUnit, decimals }) => {
@@ -114,7 +117,7 @@ describe("circle tabs", () => {
 		expect(segs.some((s) => s.to.z === s.from.z)).toBe(true); // flat on a tab or the final lap
 	});
 	it("warns and skips tabs that do not fit", () => {
-		const r = generateGcode(circle({ diameter: 12, tabs: { ...defaultParams().tabs, perSide: 4, length: 8 } }));
+		const r = generateGcode(circle({ diameter: 12, tabs: { ...testDefaults().tabs, perSide: 4, length: 8 } }));
 		expect(r.warnings.join(" ")).toMatch(/don't fit/);
 	});
 	it("no tabs when disabled", () => {

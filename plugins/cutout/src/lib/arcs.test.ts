@@ -7,18 +7,21 @@ import { buildMoves, generateGcode, tabSpans, toolOutline } from "./generate";
 import { buildOutline, reverseOutline } from "./outline";
 import { defaultParams, type Params } from "./params";
 
-const job = (patch: Partial<Params> = {}): Params => ({ ...defaultParams(), cornerRadius: 6, ...patch });
-const noTabs = { ...defaultParams().tabs, enabled: false };
+/** The defaults with a depth filled in (the plugin starts at 0 so the user has to enter one). */
+const testDefaults = (): Params => ({ ...defaultParams(), depth: 19 });
+
+const job = (patch: Partial<Params> = {}): Params => ({ ...testDefaults(), cornerRadius: 6, ...patch });
+const noTabs = { ...testDefaults().tabs, enabled: false };
 const strip = (g: string) => g.replace(/\([^)]*\)/g, "");
 const words = (g: string) => new Set([...strip(g).matchAll(/\b([GM]\d+)\b/g)].map((m) => m[1]));
 
 const cases: { name: string; patch: Partial<Params>; decimals: number; mmPerUnit: number }[] = [
 	{ name: "inside, climb, trapezoid tabs", patch: {}, decimals: 3, mmPerUnit: 1 },
 	{ name: "outside, climb, no tabs", patch: { mode: "part", tabs: noTabs }, decimals: 3, mmPerUnit: 1 },
-	{ name: "inside, conventional, rectangular tabs", patch: { direction: "conventional", tabs: { ...defaultParams().tabs, shape: "rectangular" } }, decimals: 3, mmPerUnit: 1 },
+	{ name: "inside, conventional, rectangular tabs", patch: { direction: "conventional", tabs: { ...testDefaults().tabs, shape: "rectangular" } }, decimals: 3, mmPerUnit: 1 },
 	{ name: "outside, conventional, lower-left origin", patch: { mode: "part", direction: "conventional", origin: "lower-left" }, decimals: 3, mmPerUnit: 1 },
 	{ name: "inch", patch: { units: "in" }, decimals: 4, mmPerUnit: 25.4 },
-	{ name: "inch, outside, 2 tabs per side", patch: { units: "in", mode: "part", tabs: { ...defaultParams().tabs, perSide: 2 } }, decimals: 4, mmPerUnit: 25.4 },
+	{ name: "inch, outside, 2 tabs per side", patch: { units: "in", mode: "part", tabs: { ...testDefaults().tabs, perSide: 2 } }, decimals: 4, mmPerUnit: 25.4 },
 ];
 
 describe.each(cases)("arcs vs chords ($name)", ({ patch, decimals, mmPerUnit }) => {
