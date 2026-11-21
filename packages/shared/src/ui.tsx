@@ -1,4 +1,4 @@
-import { type ReactNode, useState } from "react";
+import { type CSSProperties, type ReactNode, useState } from "react";
 
 import { FEED_PRESETS, type FeedPreset } from "./feeds";
 
@@ -11,9 +11,9 @@ export const Card = ({
 	hint?: string;
 	children: ReactNode;
 }) => (
-	<section className="rounded-xl border border-gray-200 bg-white p-4 shadow-sm dark:border-slate-700 dark:bg-slate-900">
+	<section className="rounded-xl border border-gray-200 bg-white p-4 dark:border-slate-700 dark:bg-slate-900">
 		<header className="mb-3">
-			<h2 className="m-0 text-sm font-semibold tracking-wide text-gray-900 dark:text-slate-100">
+			<h2 className="m-0 text-[15px] font-semibold tracking-tight text-gray-900 dark:text-slate-100">
 				{title}
 			</h2>
 			{hint ? <p className="m-0 mt-0.5 text-xs text-gray-500 dark:text-slate-400">{hint}</p> : null}
@@ -23,8 +23,8 @@ export const Card = ({
 );
 
 const inputBase =
-	"h-12 w-full rounded-lg border border-gray-300 bg-gray-50 px-3 text-base tabular-nums outline-none transition focus:border-blue-500 focus:bg-white focus:ring-2 focus:ring-blue-500/30 dark:border-slate-600 dark:bg-slate-800 dark:focus:bg-slate-800";
-const invalidRing = "!border-red-400 !ring-2 !ring-red-400/20";
+	"h-12 w-full rounded-lg border border-gray-200 bg-white px-3.5 text-[17px] tabular-nums text-gray-900 shadow-[0_1px_2px_rgb(0_0_0/0.04)] outline-none transition placeholder:text-gray-400 hover:border-gray-300 focus:border-gray-900 focus:ring-4 focus:ring-gray-900/[0.07] dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100 dark:placeholder:text-slate-500 dark:hover:border-slate-600 dark:focus:border-slate-200 dark:focus:ring-white/10";
+const invalidRing = "!border-red-500 !ring-4 !ring-red-500/15";
 
 /** Reads what is typed in a number box. Empty or half-typed ("-", ".") is NaN. Accepts a comma as the decimal mark. */
 export const parseNumber = (text: string): number => {
@@ -111,11 +111,11 @@ const NumInput = ({
 };
 
 const FieldLabel = ({ children }: { children: ReactNode }) => (
-	<span className="text-xs font-medium text-gray-600 dark:text-slate-400">{children}</span>
+	<span className="text-[13px] font-medium text-gray-600 dark:text-slate-400">{children}</span>
 );
 
 const Suffix = ({ children }: { children: ReactNode }) => (
-	<span className="pointer-events-none absolute inset-y-0 right-3 flex items-center text-xs text-gray-400">{children}</span>
+	<span className="pointer-events-none absolute inset-y-0 right-3.5 flex items-center font-mono text-xs text-gray-400 dark:text-slate-500">{children}</span>
 );
 
 /**
@@ -142,7 +142,7 @@ export const NumberField = ({
 	invalid?: boolean;
 	hint?: string;
 }) => (
-	<label className="flex flex-col gap-1">
+	<label className="flex flex-col gap-1.5">
 		<FieldLabel>{label}</FieldLabel>
 		<span className="relative block">
 			<NumInput
@@ -154,7 +154,7 @@ export const NumberField = ({
 			/>
 			{suffix ? <Suffix>{suffix}</Suffix> : null}
 		</span>
-		{hint ? <span className="text-xs text-gray-500 dark:text-slate-400">{hint}</span> : null}
+		{hint ? <span className="text-[13px] text-gray-500 dark:text-slate-400">{hint}</span> : null}
 	</label>
 );
 
@@ -173,7 +173,7 @@ export const Stepper = ({
 	max?: number;
 }) => {
 	const btn =
-		"h-12 w-14 shrink-0 cursor-pointer select-none rounded-lg border border-gray-300 bg-gray-50 text-2xl leading-none transition hover:border-blue-500 active:scale-95 active:bg-blue-50 disabled:cursor-default disabled:opacity-40 dark:border-slate-600 dark:bg-slate-800 dark:active:bg-slate-700";
+		"flex h-12 w-14 shrink-0 cursor-pointer select-none items-center justify-center rounded-lg border border-gray-200 bg-white text-2xl font-light leading-none text-gray-900 shadow-[0_1px_2px_rgb(0_0_0/0.04)] transition hover:border-gray-400 active:scale-95 active:bg-gray-100 disabled:cursor-default disabled:opacity-35 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100 dark:hover:border-slate-500 dark:active:bg-slate-800";
 	const clamp = (v: number) => Math.min(max, Math.max(min, Math.round(v)));
 	const known = Number.isFinite(value);
 	return (
@@ -203,9 +203,9 @@ export const Stepper = ({
 };
 
 export const Stat = ({ label, value }: { label: string; value: string }) => (
-	<div className="rounded-lg bg-gray-100 px-3 py-2 dark:bg-slate-800">
-		<div className="text-[11px] uppercase tracking-wide text-gray-500 dark:text-slate-400">{label}</div>
-		<div className="text-base font-semibold tabular-nums">{value}</div>
+	<div className="min-w-0 rounded-lg border border-gray-200 bg-white px-3 py-2 dark:border-slate-700 dark:bg-slate-900">
+		<div className="truncate font-mono text-[10px] uppercase tracking-[0.08em] text-gray-500 dark:text-slate-400">{label}</div>
+		<div className="truncate text-[15px] font-semibold tracking-tight tabular-nums">{value}</div>
 	</div>
 );
 
@@ -224,9 +224,9 @@ export const Segmented = <T extends string>({
 	/** Tooltip for the whole control. */
 	title?: string;
 }) => (
-	<div className="flex flex-col gap-1" title={title}>
-		{label ? <span className="text-xs font-medium text-gray-600 dark:text-slate-400">{label}</span> : null}
-		<div className="grid auto-cols-fr grid-flow-col gap-1 rounded-lg bg-gray-100 p-1 dark:bg-slate-800">
+	<div className="flex flex-col gap-1.5" title={title}>
+		{label ? <span className="text-[13px] font-medium text-gray-600 dark:text-slate-400">{label}</span> : null}
+		<div className="grid auto-cols-fr grid-flow-col gap-0.5 rounded-[11px] bg-gray-100 p-[3px] dark:bg-slate-800">
 			{options.map((o) => (
 				<button
 					key={o.value}
@@ -234,10 +234,10 @@ export const Segmented = <T extends string>({
 					title={o.title}
 					aria-pressed={o.value === value}
 					onClick={() => onChange(o.value)}
-					className={`flex min-h-11 cursor-pointer select-none items-center justify-center gap-1.5 rounded-md px-2 py-1 text-center text-sm font-medium leading-tight transition active:scale-[0.97] ${
+					className={`flex min-h-11 cursor-pointer select-none items-center justify-center gap-1.5 rounded-[9px] px-2 py-1 text-center text-sm leading-tight transition duration-200 active:scale-[0.97] ${
 						o.value === value
-							? "bg-white text-blue-700 shadow-sm dark:bg-slate-600 dark:text-white"
-							: "text-gray-600 hover:text-gray-900 dark:text-slate-400 dark:hover:text-slate-100"
+							? "bg-white font-semibold text-gray-900 shadow-[0_3px_8px_rgb(0_0_0/0.12),0_3px_1px_rgb(0_0_0/0.04)] dark:bg-slate-600 dark:text-white"
+							: "font-medium text-gray-500 hover:text-gray-900 dark:text-slate-400 dark:hover:text-slate-100"
 					}`}
 				>
 					{o.icon}
@@ -310,9 +310,9 @@ export const Toggle = ({
 			role="switch"
 			aria-checked={checked}
 			onClick={() => onChange(!checked)}
-			className={`relative h-8 w-14 shrink-0 cursor-pointer rounded-full transition ${checked ? "bg-blue-600" : "bg-gray-300 dark:bg-slate-600"}`}
+			className={`relative h-[31px] w-[51px] shrink-0 cursor-pointer rounded-full transition ${checked ? "bg-blue-600" : "bg-gray-200 dark:bg-slate-600"}`}
 		>
-			<span className={`absolute top-0.5 h-7 w-7 rounded-full bg-white shadow transition-all ${checked ? "left-[26px]" : "left-0.5"}`} />
+			<span className={`absolute top-[2px] h-[27px] w-[27px] rounded-full bg-white shadow-[0_3px_8px_rgb(0_0_0/0.15),0_3px_1px_rgb(0_0_0/0.06)] transition-all ${checked ? "left-[22px]" : "left-[2px]"}`} />
 		</button>
 	</label>
 );
@@ -351,7 +351,8 @@ export const SliderField = ({
 				step={step}
 				value={Number.isFinite(value) ? Math.min(Math.max(value, min), top) : min}
 				onChange={(e) => onChange(Number((Math.round(e.currentTarget.valueAsNumber / step) * step).toFixed(4)))}
-				className="touch-range w-full accent-blue-600"
+				className="touch-range w-full"
+				style={{ "--fill": `${top > min && Number.isFinite(value) ? (Math.min(Math.max(value, min), top) - min) / (top - min) * 100 : 0}%` } as CSSProperties}
 				aria-label={`${label} slider`}
 			/>
 		</div>
@@ -364,20 +365,25 @@ export const SliderField = ({
  */
 export const Notices = ({ errors = [], warnings = [], info = [] }: { errors?: string[]; warnings?: string[]; info?: string[] }) => {
 	if (errors.length === 0 && warnings.length === 0 && info.length === 0) return null;
+	const icon = (kind: "e" | "w" | "i") => (
+		<svg viewBox="0 0 16 16" width="16" height="16" aria-hidden className={`mt-[2px] shrink-0 ${kind === "e" ? "text-red-600 dark:text-red-400" : kind === "w" ? "text-amber-600 dark:text-amber-400" : "text-blue-600 dark:text-blue-400"}`}>
+			{kind === "w" ? (
+				<path fill="currentColor" d="M8.9 1.6a1 1 0 0 0-1.8 0L.6 13.5A1 1 0 0 0 1.5 15h13a1 1 0 0 0 .9-1.5L8.9 1.6ZM7.25 6h1.5v4.5h-1.5V6Zm.75 7.25a1 1 0 1 1 0-2 1 1 0 0 1 0 2Z" />
+			) : kind === "e" ? (
+				<path fill="currentColor" d="M8 0a8 8 0 1 0 0 16A8 8 0 0 0 8 0Zm-.75 3.5h1.5v6h-1.5v-6ZM8 12.75a1 1 0 1 1 0-2 1 1 0 0 1 0 2Z" />
+			) : (
+				<path fill="currentColor" d="M8 0a8 8 0 1 0 0 16A8 8 0 0 0 8 0Zm.75 12.5h-1.5v-6h1.5v6ZM8 5.25a1 1 0 1 1 0-2 1 1 0 0 1 0 2Z" />
+			)}
+		</svg>
+	);
 	const row = (text: string, kind: "e" | "w" | "i") => (
-		<li key={`${kind}-${text}`} className="flex gap-2 py-0.5">
-			<span aria-hidden>{kind === "e" ? "⛔" : kind === "w" ? "⚠" : "ℹ"}</span>
+		<li key={`${kind}-${text}`} className="flex gap-2.5 py-1">
+			{icon(kind)}
 			<span>{text}</span>
 		</li>
 	);
-	const tone =
-		errors.length > 0
-			? "border-red-300 bg-red-50 text-red-900 dark:border-red-800 dark:bg-red-950 dark:text-red-200"
-			: warnings.length > 0
-				? "border-amber-300 bg-amber-50 text-amber-900 dark:border-amber-700 dark:bg-amber-950 dark:text-amber-200"
-				: "border-slate-300 bg-slate-100 text-slate-800 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-200";
 	return (
-		<div role="alert" className={`shrink-0 border-t px-4 py-2 text-sm ${tone}`}>
+		<div role="alert" className="shrink-0 border-t border-gray-200 bg-white/85 px-4 py-1.5 text-[13px] text-gray-800 backdrop-blur-xl dark:border-slate-800 dark:bg-slate-900/85 dark:text-slate-200">
 			<ul className="m-0 max-h-32 list-none overflow-y-auto p-0">
 				{errors.map((e) => row(e, "e"))}
 				{warnings.map((w) => row(w, "w"))}
@@ -407,7 +413,7 @@ export const BlankNumberField = ({
 	hint?: string;
 	placeholder?: string;
 }) => (
-	<label className="flex flex-col gap-1">
+	<label className="flex flex-col gap-1.5">
 		<FieldLabel>{label}</FieldLabel>
 		<span className="relative block">
 			<NumInput
@@ -421,7 +427,7 @@ export const BlankNumberField = ({
 			/>
 			{suffix ? <Suffix>{suffix}</Suffix> : null}
 		</span>
-		{hint ? <span className="text-xs text-gray-500 dark:text-slate-400">{hint}</span> : null}
+		{hint ? <span className="text-[13px] text-gray-500 dark:text-slate-400">{hint}</span> : null}
 	</label>
 );
 
@@ -438,7 +444,7 @@ export const FilePicker = ({
 	onFile: (file: File) => void;
 }) => (
 	<label className="flex cursor-pointer items-center gap-3">
-		<span className="flex h-12 shrink-0 items-center rounded-lg border border-gray-300 bg-gray-50 px-4 text-sm font-medium transition hover:border-blue-500 active:scale-95 dark:border-slate-600 dark:bg-slate-800">
+		<span className="flex h-11 shrink-0 items-center rounded-lg border border-gray-200 bg-white px-4 text-sm font-medium shadow-[0_1px_2px_rgb(0_0_0/0.04)] transition hover:border-gray-900 active:scale-95 dark:border-slate-700 dark:bg-slate-900 dark:hover:border-slate-300">
 			{label}
 		</span>
 		<span className="min-w-0 truncate text-sm text-gray-500 dark:text-slate-400">{fileName ?? "No file chosen"}</span>
@@ -458,29 +464,29 @@ export const FilePicker = ({
 
 /** Extra settings that most jobs leave alone, behind a large tap target. */
 export const More = ({ label = "More options", children }: { label?: string; children: ReactNode }) => (
-	<details className="group mt-3 rounded-lg border border-gray-200 dark:border-slate-700">
-		<summary className="flex min-h-12 cursor-pointer select-none list-none items-center justify-between px-3 text-sm font-medium text-gray-700 dark:text-slate-300 [&::-webkit-details-marker]:hidden">
+	<details className="group mt-1 overflow-hidden rounded-xl border border-gray-200 bg-white dark:border-slate-700 dark:bg-slate-900">
+		<summary className="flex min-h-12 cursor-pointer select-none list-none items-center justify-between px-4 text-sm font-medium text-gray-900 transition hover:bg-gray-50 dark:text-slate-100 dark:hover:bg-slate-800 [&::-webkit-details-marker]:hidden">
 			<span>{label}</span>
-			<svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2" className="transition group-open:rotate-180" aria-hidden>
+			<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" className="text-gray-400 transition duration-200 group-open:rotate-180" aria-hidden>
 				<path d="M6 9l6 6 6-6" />
 			</svg>
 		</summary>
-		<div className="flex flex-col gap-3 border-t border-gray-200 p-3 dark:border-slate-700">{children}</div>
+		<div className="flex flex-col gap-4 border-t border-gray-200 p-4 dark:border-slate-700">{children}</div>
 	</details>
 );
 
 /** Short explanation under a control. */
 export const Hint = ({ children }: { children: ReactNode }) => (
-	<p className="m-0 text-xs text-gray-500 dark:text-slate-400">{children}</p>
+	<p className="m-0 text-[13px] leading-snug text-gray-500 dark:text-slate-400">{children}</p>
 );
 
 /** Label / value rows for the final check step. A row whose value is missing is flagged. */
 export const Summary = ({ rows }: { rows: [label: string, value: ReactNode][] }) => (
-	<dl className="m-0 divide-y divide-gray-200 rounded-lg border border-gray-200 text-sm dark:divide-slate-700 dark:border-slate-700">
+	<dl className="m-0 divide-y divide-gray-200 overflow-hidden rounded-xl border border-gray-200 bg-white text-sm dark:divide-slate-700 dark:border-slate-700 dark:bg-slate-900">
 		{rows.map(([label, value]) => (
-			<div key={label} className="flex items-baseline justify-between gap-3 px-3 py-2">
+			<div key={label} className="flex min-h-11 items-center justify-between gap-4 px-4 py-2">
 				<dt className="text-gray-500 dark:text-slate-400">{label}</dt>
-				<dd className="m-0 text-right font-medium tabular-nums">{value}</dd>
+				<dd className="m-0 text-right font-medium tabular-nums text-gray-900 dark:text-slate-100">{value}</dd>
 			</div>
 		))}
 	</dl>

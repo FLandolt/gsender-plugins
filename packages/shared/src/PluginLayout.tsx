@@ -15,14 +15,28 @@ export type Step = {
 
 export type Status = { ok: boolean; text: string } | null;
 
-const navBtn =
-	"inline-flex h-12 shrink-0 cursor-pointer select-none items-center justify-center gap-1 rounded-lg border border-gray-300 bg-white px-4 text-sm font-medium transition hover:border-blue-500 active:scale-95 disabled:cursor-default disabled:opacity-40 dark:border-slate-600 dark:bg-slate-800";
+/** Buttons as on the website: black (white in dark mode) for the main action, hairline outline for the rest. */
+const baseBtn =
+	"inline-flex h-11 shrink-0 cursor-pointer select-none items-center justify-center gap-1.5 rounded-lg px-4 text-sm font-medium transition duration-150 active:scale-[0.97] disabled:cursor-default disabled:opacity-35 disabled:active:scale-100";
 
-export const primaryBtn =
-	"inline-flex h-12 shrink-0 cursor-pointer select-none items-center justify-center rounded-lg bg-blue-600 px-5 text-base font-semibold text-white shadow-sm transition hover:bg-blue-500 active:scale-95 disabled:cursor-default disabled:opacity-40";
+const navBtn = `${baseBtn} border border-gray-200 bg-white text-gray-900 shadow-[0_1px_2px_rgb(0_0_0/0.04)] hover:border-gray-900 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100 dark:hover:border-slate-300`;
 
-export const secondaryBtn =
-	"inline-flex h-12 shrink-0 cursor-pointer select-none items-center justify-center rounded-lg border border-gray-300 px-4 text-sm font-medium transition hover:border-blue-500 active:scale-95 disabled:cursor-default disabled:opacity-40 dark:border-slate-600";
+export const primaryBtn = `${baseBtn} bg-gray-900 px-5 text-white hover:bg-gray-700 dark:bg-slate-100 dark:text-gray-900 dark:hover:bg-white`;
+
+export const secondaryBtn = navBtn;
+
+const Chevron = ({ dir }: { dir: "left" | "right" }) => (
+	<svg viewBox="0 0 16 16" width="14" height="14" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+		<path d={dir === "left" ? "M10 3 5 8l5 5" : "M6 3l5 5-5 5"} />
+	</svg>
+);
+
+/** The website's mark: a ring with an accent dot, like the bit seen from above. */
+const Mark = () => (
+	<span aria-hidden className="relative inline-block h-4 w-4 shrink-0 rounded-full border-2 border-gray-900 dark:border-slate-100">
+		<span className="absolute inset-[3px] rounded-full bg-blue-600 dark:bg-blue-400" />
+	</span>
+);
 
 /** The three figures over the preview. */
 export const StatRow = ({ items }: { items: [label: string, value: string][] }) => (
@@ -85,15 +99,16 @@ const PluginLayout = ({
 	}, [code]);
 
 	return (
-		<div className="flex h-full flex-col bg-gray-50 text-gray-900 dark:bg-slate-950 dark:text-slate-100">
-			<header className="shrink-0 border-b border-gray-200 bg-white px-3 pt-2 dark:border-slate-800 dark:bg-slate-900">
-				<div className="flex min-w-0 items-baseline gap-3">
-					<h1 className="m-0 shrink-0 text-lg font-semibold">{title}</h1>
-					<p className="m-0 min-w-0 truncate text-xs text-gray-500 dark:text-slate-400" title={intro}>
+		<div className="flex h-full flex-col bg-gray-50 text-gray-900 antialiased dark:bg-black dark:text-slate-100">
+			<header className="shrink-0 border-b border-gray-200 bg-white/80 px-4 pt-3 backdrop-blur-xl backdrop-saturate-150 dark:border-slate-800 dark:bg-black/70">
+				<div className="flex min-w-0 items-center gap-2.5">
+					<Mark />
+					<h1 className="m-0 shrink-0 text-[17px] font-semibold tracking-tight">{title}</h1>
+					<p className="m-0 min-w-0 truncate text-[13px] text-gray-500 dark:text-slate-400" title={intro}>
 						{intro}
 					</p>
 				</div>
-				<nav aria-label="Steps" ref={tabs} className="no-scrollbar -mx-3 flex gap-1 overflow-x-auto px-3 pb-2 pt-1.5">
+				<nav aria-label="Steps" ref={tabs} className="no-scrollbar -mx-4 flex gap-1 overflow-x-auto px-4 pb-2.5 pt-2.5">
 					{steps.map((s, i) => {
 						const current = i === at;
 						return (
@@ -102,21 +117,25 @@ const PluginLayout = ({
 								type="button"
 								aria-current={current ? "step" : undefined}
 								onClick={() => setIndex(i)}
-								className={`relative flex min-h-11 shrink-0 cursor-pointer select-none items-center gap-2 rounded-full border py-1 pl-1.5 pr-3.5 text-sm font-medium transition active:scale-95 ${
+								className={`relative flex min-h-11 shrink-0 cursor-pointer select-none items-center gap-2 rounded-full py-1 pl-1.5 pr-4 text-sm font-medium transition duration-150 active:scale-[0.97] ${
 									current
-										? "border-blue-600 bg-blue-600 text-white shadow-sm"
-										: "border-gray-200 bg-gray-50 text-gray-700 hover:border-blue-400 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300"
+										? "bg-gray-900 text-white dark:bg-slate-100 dark:text-gray-900"
+										: "text-gray-500 hover:bg-gray-100 hover:text-gray-900 dark:text-slate-400 dark:hover:bg-slate-800 dark:hover:text-slate-100"
 								}`}
 							>
 								<span
-									className={`flex h-7 w-7 items-center justify-center rounded-full text-xs font-semibold tabular-nums ${
-										current ? "bg-white/25 text-white" : s.issue ? "bg-red-100 text-red-700 dark:bg-red-950 dark:text-red-300" : "bg-gray-200 text-gray-700 dark:bg-slate-700 dark:text-slate-200"
+									className={`flex h-7 w-7 items-center justify-center rounded-full font-mono text-[11px] font-semibold tabular-nums ${
+										current
+											? "bg-white/20 text-white dark:bg-gray-900/10 dark:text-gray-900"
+											: s.issue
+												? "bg-red-50 text-red-600 ring-1 ring-red-200 dark:bg-red-950 dark:text-red-300 dark:ring-red-900"
+												: "bg-white text-gray-600 ring-1 ring-gray-200 dark:bg-slate-900 dark:text-slate-300 dark:ring-slate-700"
 									}`}
 								>
 									{i + 1}
 								</span>
 								{s.label}
-								{s.issue && <span className="absolute right-1 top-1 h-2.5 w-2.5 rounded-full bg-red-500 ring-2 ring-white dark:ring-slate-900" aria-label="needs attention" />}
+								{s.issue && <span className="absolute right-1.5 top-1.5 h-2 w-2 rounded-full bg-red-500 ring-2 ring-white dark:ring-black" aria-label="needs attention" />}
 							</button>
 						);
 					})}
@@ -125,11 +144,11 @@ const PluginLayout = ({
 
 			<main className="grid min-h-0 grow grid-cols-1 grid-rows-[minmax(190px,44%)_minmax(0,1fr)] wide:grid-cols-[minmax(330px,430px)_minmax(0,1fr)] wide:grid-rows-1">
 				{/* Preview: on top in portrait, on the right in landscape. Never scrolls away. */}
-				<section aria-label="Preview" className="order-1 flex min-h-0 min-w-0 flex-col gap-2 border-b border-gray-200 p-3 dark:border-slate-800 wide:order-2 wide:border-b-0 wide:pl-0">
+				<section aria-label="Preview" className="order-1 flex min-h-0 min-w-0 flex-col gap-2.5 border-b border-gray-200 p-4 dark:border-slate-800 wide:order-2 wide:border-b-0 wide:pl-0">
 					{stats}
 					<div className="relative min-h-0 grow">
 						{showCode && code ? (
-							<pre className="m-0 h-full overflow-auto rounded-xl bg-gray-100 p-3 font-mono text-[11px] leading-relaxed dark:bg-slate-900">{code}</pre>
+							<pre className="m-0 h-full overflow-auto rounded-xl border border-gray-200 bg-white p-4 font-mono text-[11px] leading-relaxed text-gray-700 dark:border-slate-800 dark:bg-slate-900 dark:text-slate-300">{code}</pre>
 						) : (
 							preview
 						)}
@@ -137,20 +156,20 @@ const PluginLayout = ({
 				</section>
 
 				{/* Settings for the current step */}
-				<section ref={scroller} aria-label="Settings" className="order-2 min-h-0 overflow-y-auto overscroll-contain p-3 wide:order-1">
-					<div className="rounded-xl border border-gray-200 bg-white p-4 shadow-sm dark:border-slate-700 dark:bg-slate-900">
-						<header className="mb-3">
-							<p className="m-0 text-[11px] font-semibold uppercase tracking-wide text-blue-600 dark:text-blue-400">
+				<section ref={scroller} aria-label="Settings" className="order-2 min-h-0 overflow-y-auto overscroll-contain p-4 wide:order-1">
+					<div className="rounded-2xl border border-gray-200 bg-white p-5 shadow-[0_1px_2px_rgb(0_0_0/0.03),0_8px_24px_-12px_rgb(0_0_0/0.08)] dark:border-slate-800 dark:bg-slate-900 dark:shadow-none">
+						<header className="mb-4">
+							<p className="m-0 font-mono text-[11px] uppercase tracking-[0.08em] text-gray-500 dark:text-slate-400">
 								Step {at + 1} of {steps.length}
 							</p>
-							<h2 className="m-0 text-base font-semibold">{step.label}</h2>
-							{step.hint ? <p className="m-0 mt-0.5 text-xs text-gray-500 dark:text-slate-400">{step.hint}</p> : null}
+							<h2 className="m-0 mt-1 text-[22px] font-semibold leading-tight tracking-[-0.02em]">{step.label}</h2>
+							{step.hint ? <p className="m-0 mt-1 text-[13px] leading-snug text-gray-500 dark:text-slate-400">{step.hint}</p> : null}
 						</header>
-						<div className="flex flex-col gap-3">{step.content}</div>
+						<div className="flex flex-col gap-4">{step.content}</div>
 					</div>
 					{at < steps.length - 1 && (
-						<button type="button" onClick={() => setIndex(at + 1)} className={`${navBtn} mt-3 w-full`}>
-							Next: {steps[at + 1].label} ›
+						<button type="button" onClick={() => setIndex(at + 1)} className={`${navBtn} mt-3 h-12 w-full`}>
+							Next: {steps[at + 1].label} <Chevron dir="right" />
 						</button>
 					)}
 				</section>
@@ -158,12 +177,12 @@ const PluginLayout = ({
 
 			{notices}
 
-			<footer className="flex shrink-0 flex-wrap items-center gap-2 border-t border-gray-200 bg-white px-3 py-2 dark:border-slate-800 dark:bg-slate-900">
+			<footer className="flex shrink-0 flex-wrap items-center gap-2 border-t border-gray-200 bg-white/80 px-4 py-2.5 backdrop-blur-xl backdrop-saturate-150 dark:border-slate-800 dark:bg-black/70">
 				<button type="button" className={navBtn} disabled={at === 0} onClick={() => setIndex(at - 1)} aria-label="Previous step">
-					‹ Back
+					<Chevron dir="left" /> Back
 				</button>
 				<button type="button" className={navBtn} disabled={at === steps.length - 1} onClick={() => setIndex(at + 1)} aria-label="Next step">
-					Next ›
+					Next <Chevron dir="right" />
 				</button>
 				{status && (
 					<span className={`min-w-0 text-sm ${status.ok ? "text-green-600 dark:text-green-400" : "text-red-600 dark:text-red-400"}`}>{status.text}</span>
@@ -183,7 +202,7 @@ export default PluginLayout;
 
 /** Shown in place of the 3D view while something still has to be fixed. */
 export const PreviewPlaceholder = ({ text = "Fix the items marked in red to see the toolpath." }: { text?: string }) => (
-	<div className="flex h-full items-center justify-center rounded-xl border border-dashed border-gray-300 p-4 text-center text-sm text-gray-500 dark:border-slate-700 dark:text-slate-400">
+	<div className="dot-grid flex h-full items-center justify-center rounded-xl border border-gray-200 bg-white p-4 text-center text-sm text-gray-500 dark:border-slate-800 dark:bg-slate-950 dark:text-slate-400">
 		{text}
 	</div>
 );

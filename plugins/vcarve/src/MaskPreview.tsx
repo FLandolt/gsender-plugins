@@ -13,7 +13,7 @@ const MaskPreview = ({ gray, threshold, invert }: { gray: Gray; threshold: numbe
 		canvas.height = gray.h;
 		ctx.putImageData(new ImageData(maskPixels(gray, threshold, invert) as unknown as Uint8ClampedArray<ArrayBuffer>, gray.w, gray.h), 0, 0);
 	}, [gray, threshold, invert]);
-	return <canvas ref={ref} className="h-auto max-h-48 w-full rounded-lg border border-gray-300 bg-white object-contain dark:border-slate-600" aria-label="Black areas will be carved" />;
+	return <canvas ref={ref} className="h-auto max-h-48 w-full rounded-xl border border-gray-200 bg-white object-contain dark:border-slate-700" aria-label="Black areas will be carved" />;
 };
 
 export default MaskPreview;

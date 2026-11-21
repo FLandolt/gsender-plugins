@@ -1,7 +1,7 @@
 import { gcode } from "@sienci/gsender-plugin-sdk";
 import { useWorkspaceState } from "@sienci/gsender-plugin-sdk/react";
 import type opentype from "opentype.js";
-import { lazy, Suspense, useDeferredValue, useEffect, useMemo, useState } from "react";
+import { type CSSProperties, lazy, Suspense, useDeferredValue, useEffect, useMemo, useState } from "react";
 
 import { FEED_PRESETS } from "@shared/feeds";
 import { ImageIcon, ShapesIcon, TextIcon } from "@shared/icons";
@@ -227,12 +227,12 @@ const App = () => {
 							{params.source === "text" && (
 								<>
 									<label className="flex flex-col gap-1">
-										<span className="text-xs font-medium text-gray-600 dark:text-slate-400">Text (a new line starts a new row)</span>
+										<span className="text-[13px] font-medium text-gray-600 dark:text-slate-400">Text (a new line starts a new row)</span>
 										<textarea
 											value={params.text}
 											rows={2}
 											onChange={(e) => update({ text: e.currentTarget.value })}
-											className="w-full resize-y rounded-lg border border-gray-300 bg-gray-50 p-3 text-base outline-none transition focus:border-blue-500 focus:bg-white focus:ring-2 focus:ring-blue-500/30 dark:border-slate-600 dark:bg-slate-800"
+											className="w-full resize-y rounded-lg border border-gray-200 bg-white px-3.5 py-3 text-[17px] text-gray-900 shadow-[0_1px_2px_rgb(0_0_0/0.04)] outline-none transition hover:border-gray-300 focus:border-gray-900 focus:ring-4 focus:ring-gray-900/[0.07] dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100 dark:focus:border-slate-200 dark:focus:ring-white/10"
 										/>
 									</label>
 									<Segmented
@@ -262,7 +262,7 @@ const App = () => {
 							{params.source === "svg" && (
 								<>
 									<FilePicker label="Choose an SVG…" accept=".svg,image/svg+xml" fileName={svg?.name ?? null} onFile={onSvg} />
-									<p className="m-0 text-xs text-gray-500 dark:text-slate-400">
+									<p className="m-0 text-[13px] leading-snug text-gray-500 dark:text-slate-400">
 										Closed shapes are carved. A shape inside another one is a hole (like the inside of an O). Open lines are left out.
 									</p>
 								</>
@@ -274,7 +274,7 @@ const App = () => {
 									{image && (
 										<>
 											<div className="flex flex-col gap-1">
-												<span className="flex items-baseline justify-between text-xs font-medium text-gray-600 dark:text-slate-400">
+												<span className="flex items-baseline justify-between text-[13px] font-medium text-gray-600 dark:text-slate-400">
 													<span>Threshold: what counts as shape</span>
 													<span className="tabular-nums">{params.threshold}</span>
 												</span>
@@ -284,13 +284,14 @@ const App = () => {
 													max={254}
 													value={params.threshold}
 													onChange={(e) => update({ threshold: e.currentTarget.valueAsNumber })}
-													className="touch-range w-full accent-blue-600"
+													className="touch-range w-full"
+													style={{ "--fill": `${((params.threshold - 1) / 253) * 100}%` } as CSSProperties}
 													aria-label="Threshold"
 												/>
 											</div>
 											<OnOff label="Invert: carve the light areas instead of the dark" value={params.invert} onChange={(invert) => update({ invert })} />
 											<MaskPreview gray={image.gray} threshold={params.threshold} invert={params.invert} />
-											<p className="m-0 text-xs text-gray-500 dark:text-slate-400">Black areas will be carved.</p>
+											<p className="m-0 text-[13px] leading-snug text-gray-500 dark:text-slate-400">Black areas will be carved.</p>
 										</>
 									)}
 								</>
@@ -353,7 +354,7 @@ const App = () => {
 									invalid={bitInvalid.maxDepth}
 									onChange={(v) => update({ maxDepth: v === null ? null : v * scale })}
 								/>
-								<p className="m-0 text-xs text-gray-500 dark:text-slate-400">
+								<p className="m-0 text-[13px] leading-snug text-gray-500 dark:text-slate-400">
 									{params.maxDepth === null
 										? checked.deepest !== null
 											? `Automatic: ${lengthText(checked.deepest, units)}, the deepest this bit can cut. Enter a smaller number to protect thin stock; the cut is never deeper than it.`
@@ -363,7 +364,7 @@ const App = () => {
 							</div>
 							<div className="flex flex-col gap-2">
 								<OnOff label="Roughing pass, then a finishing pass" value={params.rough} onChange={(rough) => update({ rough })} />
-								<p className="m-0 text-xs text-gray-500 dark:text-slate-400">
+								<p className="m-0 text-[13px] leading-snug text-gray-500 dark:text-slate-400">
 									{params.rough
 										? "First a roughing pass that leaves some wood on the walls, then a slower finishing pass to the final size. Gives cleaner walls, and takes about twice as long."
 										: "Off: the whole depth is cut in one pass."}
@@ -475,7 +476,7 @@ const App = () => {
 					)}
 					<div className="min-h-0 grow">
 						{view === "toolpath" && preview?.gcode ? (
-							<Suspense fallback={<div className="h-full rounded-xl bg-slate-950" />}>
+							<Suspense fallback={<div className="h-full rounded-xl border border-gray-200 bg-black dark:border-slate-800" />}>
 								<ToolpathView gcode={preview.gcode} units={units} toolDiameter={checked.bit?.diameter ?? 6} materialView={false} showBit={false} />
 							</Suspense>
 						) : (

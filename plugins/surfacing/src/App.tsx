@@ -230,7 +230,7 @@ const App = () => {
 			}
 			preview={
 				previewCode ? (
-					<Suspense fallback={<div className="h-full rounded-xl bg-slate-950" />}>
+					<Suspense fallback={<div className="h-full rounded-xl border border-gray-200 bg-black dark:border-slate-800" />}>
 						<ToolpathView gcode={previewCode} units={units} toolDiameter={params.toolDiameter} />
 					</Suspense>
 				) : (

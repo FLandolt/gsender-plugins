@@ -11,8 +11,8 @@ import type { Units } from "./units";
 
 const WOOD = "#d6b88a";
 const WOOD_EDGE = "#8b6b3d";
-const BIT = "#60a5fa";
-const BIT_EDGE = "#2563eb";
+const BIT = "#52a8ff";
+const BIT_EDGE = "#0070f3";
 const SHANK = "#cbd5e1";
 const TAB = "#b08855";
 const ALERT = "#dc2626";
@@ -28,14 +28,14 @@ export const passCount = (depth: number, stepdown: number): number =>
 	ok(depth) && ok(stepdown) ? Math.max(1, Math.ceil(depth / stepdown - 1e-9)) : 0;
 
 const Frame = ({ title, caption, children, label }: { title: string; caption?: ReactNode; children: ReactNode; label: string }) => (
-	<figure className="m-0 rounded-lg border border-gray-200 bg-gray-50 p-2 text-gray-700 dark:border-slate-700 dark:bg-slate-800/60 dark:text-slate-300">
-		<figcaption className="mb-1 flex items-baseline justify-between gap-2 px-1 text-[11px] font-semibold uppercase tracking-wide text-gray-500 dark:text-slate-400">
+	<figure className="dot-grid m-0 rounded-xl border border-gray-200 bg-gray-50 p-3 text-gray-700 dark:border-slate-800 dark:bg-slate-950 dark:text-slate-300">
+		<figcaption className="mb-1 flex items-baseline justify-between gap-2 px-1 font-mono text-[10px] uppercase tracking-[0.08em] text-gray-500 dark:text-slate-400">
 			<span>{title}</span>
 		</figcaption>
 		<div role="img" aria-label={label}>
 			{children}
 		</div>
-		{caption ? <p className="m-0 mt-1 px-1 text-xs text-gray-600 dark:text-slate-400">{caption}</p> : null}
+		{caption ? <p className="m-0 mt-1 px-1 text-[13px] text-gray-600 dark:text-slate-400">{caption}</p> : null}
 	</figure>
 );
 

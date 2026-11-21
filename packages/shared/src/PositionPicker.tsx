@@ -34,9 +34,9 @@ const PositionPicker = ({
 	overlay?: ReactNode;
 }) => (
 	<div className="flex flex-col gap-1">
-		<span className="text-xs font-medium text-gray-600 dark:text-slate-400">{label}</span>
+		<span className="text-[13px] font-medium text-gray-600 dark:text-slate-400">{label}</span>
 		<div
-			className="relative mx-auto w-full max-w-[300px] rounded-lg bg-gray-100 dark:bg-slate-800"
+			className="dot-grid relative mx-auto w-full max-w-[300px] rounded-xl border border-gray-200 bg-gray-50 dark:border-slate-800 dark:bg-slate-950"
 			style={{ aspectRatio: `${BOX.W} / ${BOX.H}` }}
 		>
 			<svg viewBox={`0 0 ${BOX.W} ${BOX.H}`} className="absolute inset-0 h-full w-full text-blue-600 dark:text-blue-400" aria-hidden>
@@ -68,15 +68,15 @@ const PositionPicker = ({
 							onClick={() => onChange(s.pos)}
 							className={`absolute h-12 w-12 -translate-x-1/2 -translate-y-1/2 cursor-pointer rounded-full border-2 transition active:scale-90 ${
 								active
-									? "border-blue-600 bg-blue-600 shadow-sm"
-									: "border-gray-400 bg-white hover:border-blue-500 dark:border-slate-500 dark:bg-slate-700"
+									? "border-blue-600 bg-blue-600 shadow-[0_0_0_6px_rgb(0_112_243/0.15)]"
+									: "border-gray-300 bg-white shadow-[0_1px_3px_rgb(0_0_0/0.12)] hover:border-gray-900 dark:border-slate-600 dark:bg-slate-800 dark:hover:border-slate-300"
 							}`}
 							style={{ left: `${(s.x / BOX.W) * 100}%`, top: `${(s.y / BOX.H) * 100}%` }}
 						/>
 					);
 				})}
 		</div>
-		<p className="m-0 text-center text-xs text-gray-500 dark:text-slate-400">
+		<p className="m-0 text-center text-[13px] text-gray-500 dark:text-slate-400">
 			{hint ?? POSITION_NAMES[value][0].toUpperCase() + POSITION_NAMES[value].slice(1)}
 		</p>
 	</div>

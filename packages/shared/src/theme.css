@@ -1,0 +1,184 @@
+/*
+ * The look shared by every plugin, matched to the website: Vercel's neutral palette (white and
+ * near-black, #eaeaea hairlines, #0070f3 as the one accent colour) and its font stack, with Apple's
+ * touch rules on top (44 pt targets, segmented controls, frosted bars, less motion on request).
+ *
+ * Each plugin's index.css imports this after Tailwind. The palette is set by redefining Tailwind's
+ * gray / slate / blue scales, so every utility class in the plugins picks it up.
+ */
+
+/* gSender sets html.dark on the iframe, so key dark mode off the class
+   rather than prefers-color-scheme. */
+@custom-variant dark (&:where(.dark, .dark *));
+
+/* Settings beside the preview: a landscape screen with room for both. On a
+   portrait (9:16) or narrow screen the preview sits above the settings. */
+@custom-variant wide (@media (min-aspect-ratio: 1/1) and (min-width: 720px));
+
+@theme {
+	--font-sans: "Geist", "Inter", -apple-system, BlinkMacSystemFont, "SF Pro Text", system-ui, "Segoe UI", Roboto, sans-serif;
+	--font-mono: "Geist Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
+
+	/* Light: Vercel's neutrals. */
+	--color-gray-50: #fafafa;
+	--color-gray-100: #f2f2f2;
+	--color-gray-200: #eaeaea;
+	--color-gray-300: #d4d4d4;
+	--color-gray-400: #a1a1a1;
+	--color-gray-500: #6b6b6b;
+	--color-gray-600: #555555;
+	--color-gray-700: #333333;
+	--color-gray-800: #1f1f1f;
+	--color-gray-900: #0a0a0a;
+	--color-gray-950: #000000;
+
+	/* Dark: the same neutrals, from black up. */
+	--color-slate-50: #fafafa;
+	--color-slate-100: #ededed;
+	--color-slate-200: #ededed;
+	--color-slate-300: #c7c7c7;
+	--color-slate-400: #a1a1a1;
+	--color-slate-500: #707070;
+	--color-slate-600: #3d3d3d;
+	--color-slate-700: #262626;
+	--color-slate-800: #141414;
+	--color-slate-900: #0a0a0a;
+	--color-slate-950: #000000;
+
+	/* The accent. */
+	--color-blue-50: #ebf5ff;
+	--color-blue-100: #d3e9ff;
+	--color-blue-400: #52a8ff;
+	--color-blue-500: #3291ff;
+	--color-blue-600: #0070f3;
+	--color-blue-700: #0060df;
+
+	--radius-lg: 10px;
+	--radius-xl: 14px;
+}
+
+/* gSender renders plugins in an iframe sized by the host, so the app owns its
+   own scrolling rather than growing the frame. */
+html,
+body,
+#root {
+	height: 100%;
+}
+
+body {
+	margin: 0;
+	font-family: var(--font-sans);
+	font-feature-settings: "cv11", "ss01";
+	letter-spacing: -0.005em;
+	-webkit-font-smoothing: antialiased;
+	-moz-osx-font-smoothing: grayscale;
+	-webkit-tap-highlight-color: transparent;
+	text-rendering: optimizeLegibility;
+}
+
+/* Touch: no double-tap zoom delay on controls. */
+button,
+summary,
+label,
+input,
+select,
+textarea,
+[role="switch"] {
+	touch-action: manipulation;
+}
+
+:focus-visible {
+	outline: 2px solid #0070f3;
+	outline-offset: 2px;
+}
+input:focus-visible,
+textarea:focus-visible {
+	outline: none;
+}
+
+.no-scrollbar {
+	scrollbar-width: none;
+}
+.no-scrollbar::-webkit-scrollbar {
+	display: none;
+}
+
+/* Thin, quiet scrollbars like macOS. */
+* {
+	scrollbar-width: thin;
+	scrollbar-color: #d4d4d4 transparent;
+}
+.dark * {
+	scrollbar-color: #333 transparent;
+}
+
+/* Apple-style slider: a filled accent track up to a white knob. --fill is set by the component. */
+.touch-range {
+	--fill: 0%;
+	--track: #e5e5e5;
+	height: 36px;
+	-webkit-appearance: none;
+	appearance: none;
+	background: transparent;
+	cursor: pointer;
+}
+.dark .touch-range {
+	--track: #2e2e2e;
+}
+.touch-range::-webkit-slider-runnable-track {
+	height: 4px;
+	border-radius: 999px;
+	background: linear-gradient(to right, #0070f3 var(--fill), var(--track) var(--fill));
+}
+.touch-range::-moz-range-track {
+	height: 4px;
+	border-radius: 999px;
+	background: var(--track);
+}
+.touch-range::-moz-range-progress {
+	height: 4px;
+	border-radius: 999px;
+	background: #0070f3;
+}
+.touch-range::-webkit-slider-thumb {
+	-webkit-appearance: none;
+	width: 28px;
+	height: 28px;
+	margin-top: -12px;
+	border-radius: 999px;
+	background: #fff;
+	border: 0.5px solid rgb(0 0 0 / 0.04);
+	box-shadow:
+		0 3px 8px rgb(0 0 0 / 0.15),
+		0 1px 1px rgb(0 0 0 / 0.16),
+		0 3px 1px rgb(0 0 0 / 0.1);
+}
+.touch-range::-moz-range-thumb {
+	width: 28px;
+	height: 28px;
+	border-radius: 999px;
+	background: #fff;
+	border: 0.5px solid rgb(0 0 0 / 0.04);
+	box-shadow:
+		0 3px 8px rgb(0 0 0 / 0.15),
+		0 1px 1px rgb(0 0 0 / 0.16);
+}
+
+/* Dotted grid behind empty previews, as on the website. */
+.dot-grid {
+	background-image: radial-gradient(#d9d9d9 1px, transparent 1px);
+	background-size: 18px 18px;
+}
+.dark .dot-grid {
+	background-image: radial-gradient(#2a2a2a 1px, transparent 1px);
+}
+
+@media (prefers-reduced-motion: reduce) {
+	*,
+	*::before,
+	*::after {
+		transition-duration: 0.01ms !important;
+		animation-duration: 0.01ms !important;
+		scroll-behavior: auto !important;
+	}
+}

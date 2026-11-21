@@ -18,7 +18,7 @@ const ArtworkView = ({ shapes, bounds, label, marks = [] }: { shapes: Shape[]; b
 	const h = Math.max(bounds.maxY - bounds.minY, 1e-6);
 	const pad = Math.max(w, h) * 0.06;
 	return (
-		<div className="relative h-full min-h-72 w-full overflow-hidden rounded-lg bg-slate-950">
+		<div className="relative h-full min-h-40 w-full overflow-hidden rounded-xl border border-gray-200 bg-black dark:border-slate-800">
 			{shapes.length ? (
 				<svg
 					viewBox={`${bounds.minX - pad} ${-bounds.maxY - pad} ${w + 2 * pad} ${h + 2 * pad}`}
