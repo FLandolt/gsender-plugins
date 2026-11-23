@@ -8,6 +8,7 @@
  */
 
 import type { Position } from "@shared/position";
+import type { Strategy } from "@shared/clearing";
 import type { Units } from "@shared/units";
 
 export type { Units };
@@ -23,11 +24,13 @@ export type Params = {
 	steps: number;
 	/** Depth of the deepest level below the stock top (Z0), mm. */
 	depth: number;
-	/** How much the picture is blurred before it is split into levels, mm. Calms noise and speckles. */
+	/** Radius of the median filter run before the picture is split into levels, mm. Removes specks without blurring edges. */
 	smoothing: number;
 	toolDiameter: number;
 	/** Stepover as a fraction of the tool diameter, (0–1]. */
 	stepover: number;
+	/** How a picture's areas are cleared: rings from the inside out, or adaptive (an even load on the bit). */
+	strategy: Strategy;
 	/** Most the bit cuts down in one pass, mm. A deep step is cut in several passes. */
 	stepdown: number;
 	/** Where X0 Y0 sits on the picture's rectangle. */
@@ -51,6 +54,7 @@ export const defaultParams = (): Params => ({
 	smoothing: 1,
 	toolDiameter: 4,
 	stepover: 0.4,
+	strategy: "rings",
 	stepdown: 2,
 	origin: "lower-left",
 	feedrate: 1200,

@@ -178,3 +178,18 @@ describe("smoothing keeps sharp edges sharp", () => {
 		expect(q.target.every((v) => v === 0)).toBe(true);
 	});
 });
+
+describe("adaptive clearing", () => {
+	it("cuts the same levels as rings and writes a clean program", () => {
+		const bands = toGray(picture(300, 100, (x) => (x < 100 ? 0 : x < 200 ? 128 : 255)));
+		const size = pictureSize(bands, "width", 150);
+		const rings = planCut(bands, options(job({ steps: 2 }), size));
+		const p = job({ steps: 2, strategy: "adaptive" });
+		const adaptive = planCut(bands, options(p, size));
+		for (let k = 0; k < rings.share.length; k += 1) expect(adaptive.share[k]).toBeCloseTo(rings.share[k], 1);
+		const code = generateGcode(p, adaptive, "bands");
+		expect(code).toMatch(/adaptive/);
+		expect(code).not.toMatch(/NaN|undefined|Infinity/);
+		expect(Math.min(...parsePath(code).map((s) => s.to.z))).toBeCloseTo(-6);
+	});
+});

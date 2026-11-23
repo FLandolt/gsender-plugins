@@ -32,3 +32,10 @@ Work zero: X0 Y0 at the chosen corner of the picture or its centre, Z0 on top of
 - Very busy pictures make long programs. Smoothing and fewer steps keep them shorter.
 
 Always check the preview and air-cut first.
+
+## Clearing strategy: Rings or Adaptive
+
+Under **Bit** you can switch how each level is cleared:
+
+- **Rings** (default): rings one stepover apart from the middle of each area outwards, ending on the wall. The shortest path.
+- **Adaptive**: keeps the load on the bit about even. The material is tracked while the path is made; at each short step the bit takes the heading whose engagement is closest to what a straight cut at the stepover removes, preferring material on its left (climb milling) and refusing headings that would load it much harder. It starts inside solid material with a small ramped circle instead of a slot, moves to the next material through ground it has already cleared so it can stay down, keeps one stepover away from the walls, and finishes with one pass along the walls that takes exactly that stepover. In tests it cut moments of more than twice the target load from about 6 % of the path to about 1 %, and lowered the peak, at the cost of a path roughly 10–20 % longer at the same feeds. With the even load you can try a smaller stepover with a deeper stepdown or a higher feed. Planning takes a little longer (about a second for a typical job).

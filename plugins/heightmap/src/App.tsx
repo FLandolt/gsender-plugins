@@ -97,7 +97,7 @@ const App = () => {
 		// Without a depth yet, plan with a stand-in so the depth map can still show the levels.
 		const depth = settled.depth > 0 ? settled.depth : settled.steps;
 		return planCut(picture.gray, { ...settled, ...s, depth, stepdown: settled.depth > 0 ? settled.stepdown : depth });
-	}, [planOk, picture, settled.sizeBy, settled.size, settled.steps, settled.depth, settled.invert, settled.smoothing, settled.toolDiameter, settled.stepover, settled.stepdown]);
+	}, [planOk, picture, settled.sizeBy, settled.size, settled.steps, settled.depth, settled.invert, settled.smoothing, settled.toolDiameter, settled.stepover, settled.stepdown, settled.strategy]);
 
 	const fresh = settled === params;
 	const code = useMemo(
@@ -204,7 +204,21 @@ const App = () => {
 					{len("Bit diameter", params.toolDiameter, (v) => update({ toolDiameter: v }), true)}
 					<NumberField label="Stepover" required suffix="× bit" value={params.stepover} onChange={(stepover) => update({ stepover })} />
 					<StepoverDiagram units={units} tool={params.toolDiameter} stepover={params.stepover} />
-					<Hint>Each level is cleared in rings from its middle outwards, ending on the wall for a clean edge, like a pocket. It never cuts into a higher level.</Hint>
+					<Segmented
+						label="Clearing strategy"
+						value={params.strategy}
+						onChange={(strategy) => update({ strategy })}
+						options={[
+							{ value: "rings", label: "Rings" },
+							{ value: "adaptive", label: "Adaptive" },
+						]}
+					/>
+					<Hint>
+						{params.strategy === "adaptive"
+							? "Adaptive keeps the load on the bit about even: it never buries the bit in a full-width cut, so corners don't spike the radial force. The path is a little longer. With an even load you can try a smaller stepover and a deeper stepdown."
+							: "Rings cut from the middle of each area outwards, one stepover apart, ending on the wall: the shortest path."}
+					</Hint>
+					<Hint>Either way the bit never cuts into a higher level, and the last pass runs along the walls for a clean edge.</Hint>
 				</>
 			),
 		},
@@ -246,6 +260,7 @@ const App = () => {
 							["Size", size ? `${lengthLabel(size.width, units)} × ${lengthLabel(size.height, units)}` : "–"],
 							["Levels", params.depth > 0 ? depths.map((d, k) => (k === 0 ? "top" : `−${lengthLabel(d, units)}`)).join(" / ") : "–"],
 							["Bit", `Ø ${lengthLabel(params.toolDiameter, units)}, stepover ${Number.isFinite(params.stepover) ? Math.round(params.stepover * 100) : "–"}%`],
+							["Clearing", params.strategy === "adaptive" ? "Adaptive (even load)" : "Rings, inside out"],
 							["Passes", passes ? `${passes} (at most ${lengthLabel(params.stepdown, units)} each)` : "–"],
 							["Zero", POSITION_NAMES[params.origin]],
 							["Feed / plunge", `${shown(params.feedrate)} / ${shown(params.plungeRate)} ${units}/min`],

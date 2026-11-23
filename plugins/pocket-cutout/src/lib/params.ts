@@ -4,6 +4,7 @@
  */
 
 import type { Position } from "@shared/position";
+import type { Strategy } from "@shared/clearing";
 import type { Units } from "@shared/units";
 
 export type { Units };
@@ -38,6 +39,8 @@ export type Params = {
 	stepdown: number;
 	/** Stepover as a fraction of the tool diameter, (0–1]. */
 	stepover: number;
+	/** How a picture's areas are cleared: rings from the inside out, or adaptive (an even load on the bit). */
+	strategy: Strategy;
 	/** Which way the spiral turns. Clockwise is climb milling; counter-clockwise is conventional. */
 	rotation: Rotation;
 	/** Where X0 Y0 sits on the pocket: a corner of its bounding box or the centre. */
@@ -70,6 +73,7 @@ export const defaultParams = (): Params => ({
 	depth: 0,
 	stepdown: 2,
 	stepover: 0.4,
+	strategy: "rings",
 	rotation: "cw",
 	origin: "center",
 	feedrate: 1200,

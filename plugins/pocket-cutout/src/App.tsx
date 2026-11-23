@@ -177,7 +177,7 @@ const App = () => {
 		{
 			id: "spiral",
 			label: isPicture ? "Clearing" : "Spiral",
-			hint: isPicture ? "Rings from the middle of the shape outwards, ending on the wall, like the rectangle and circle spiral." : "Starts in the middle and works outwards, ending on the wall.",
+			hint: isPicture ? "How the shape is cleared: rings from the middle outwards, or adaptive for an even load on the bit." : "Starts in the middle and works outwards, ending on the wall.",
 			issue: !(params.stepover > 0 && params.stepover <= 1),
 			content: (
 				<>
@@ -201,6 +201,24 @@ const App = () => {
 					)}
 					<NumberField label="Stepover" required suffix="× bit" value={params.stepover} onChange={(stepover) => update({ stepover })} />
 					<StepoverDiagram units={units} tool={params.toolDiameter} stepover={params.stepover} />
+					{isPicture && (
+						<>
+					<Segmented
+						label="Clearing strategy"
+						value={params.strategy}
+						onChange={(strategy) => update({ strategy })}
+						options={[
+							{ value: "rings", label: "Rings" },
+							{ value: "adaptive", label: "Adaptive" },
+						]}
+					/>
+					<Hint>
+						{params.strategy === "adaptive"
+							? "Adaptive keeps the load on the bit about even: it never buries the bit in a full-width cut, so corners don't spike the radial force. The path is a little longer. With an even load you can try a smaller stepover and a deeper stepdown."
+							: "Rings cut from the middle of each area outwards, one stepover apart, ending on the wall: the shortest path."}
+					</Hint>
+						</>
+					)}
 				</>
 			),
 		},
@@ -253,7 +271,7 @@ const App = () => {
 							["Pocket", isPicture ? (picture?.name ?? "Picture") : round ? `Circle Ø ${lengthLabel(params.diameter, units)}` : `${lengthLabel(params.width, units)} × ${lengthLabel(params.height, units)}${params.cornerRadius > 0 ? `, r ${lengthLabel(params.cornerRadius, units)}` : ""}`],
 							["Bit", `Ø ${lengthLabel(params.toolDiameter, units)}`],
 							["Depth", `${lengthLabel(params.depth, units)}${passes ? ` in ${passes} levels` : ""}`],
-							isPicture ? ["Clearing", `Rows and outline, stepover ${Math.round(params.stepover * 100)}%`] : ["Spiral", `${params.rotation === "cw" ? "Clockwise" : "Counter-clockwise"}, stepover ${Math.round(params.stepover * 100)}%`],
+							isPicture ? ["Clearing", `${params.strategy === "adaptive" ? "Adaptive (even load)" : "Rings, inside out"}, stepover ${Math.round(params.stepover * 100)}%`] : ["Spiral", `${params.rotation === "cw" ? "Clockwise" : "Counter-clockwise"}, stepover ${Math.round(params.stepover * 100)}%`],
 							["Zero", POSITION_NAMES[params.origin]],
 							["Feed / plunge", `${shown(params.feedrate)} / ${shown(params.plungeRate)} ${units}/min`],
 							["Spindle", `${params.spindleRpm} RPM`],

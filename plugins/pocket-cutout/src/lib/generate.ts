@@ -38,7 +38,13 @@ const generatePicture = (p: Params, plan: PicturePocket, name: string): string =
 	out.push(comment(`Units: ${p.units}`));
 	out.push(comment(`Pocket: picture ${name}, ${fmt(plan.width, 2)} x ${fmt(plan.height, 2)} mm, depth ${fmt(p.depth, 3)} mm in ${plan.passes.length} level(s)`));
 	out.push(comment(`Tool: endmill ${fmt(p.toolDiameter, 3)} mm, stepover ${fmt(p.toolDiameter * p.stepover, 3)} mm`));
-	out.push(comment("Clearing: rings from the middle outwards, ending on the wall; each level ramps in along its first ring"));
+	out.push(
+		comment(
+			p.strategy === "adaptive"
+				? "Clearing: adaptive (an even load on the bit, staying down through cleared ground), then once along the walls; ramped entries"
+				: "Clearing: rings from the middle outwards, ending on the wall; each level ramps in along its first ring",
+		),
+	);
 	out.push(comment(`Feeds: cut ${fmt(p.feedrate, 0)}, plunge ${fmt(p.plungeRate, 0)} mm/min, spindle ${fmt(p.spindleRpm, 0)} RPM`));
 	out.push(comment(`Work zero: ${POSITION_NAMES[p.origin]} of the picture, Z0 = top of stock`));
 	out.push(inch ? "G20" : "G21", "G90", "G17", "G94");

@@ -287,7 +287,7 @@ export const traceContours = (f: Float32Array, w: number, h: number): Pt[][] => 
 export const ringsToMm = (g: Grid, rings: Pt[][]): Pt[][] => rings.map((r) => r.map((p) => ({ x: g.x0 + p.x * g.cell, y: g.y0 + p.y * g.cell })));
 
 /** Douglas–Peucker on an open polyline. */
-const simplifyLine = (pts: Pt[], tol: number): Pt[] => {
+export const simplifyLine = (pts: Pt[], tol: number): Pt[] => {
 	if (pts.length < 3) return pts;
 	const keep = new Uint8Array(pts.length);
 	keep[0] = keep[pts.length - 1] = 1;

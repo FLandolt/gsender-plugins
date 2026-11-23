@@ -11,7 +11,7 @@
  *    level's area, and works out what the bit really reaches.
  */
 
-import { passDepths as passDepthsFor, planClearing, type PassPlan } from "@shared/clearing";
+import { passDepths as passDepthsFor, planClearing, type PassPlan, type Strategy } from "@shared/clearing";
 import { makeGrid, type Gray, type Grid } from "@shared/picture";
 
 import { levelDepths } from "./params";
@@ -135,6 +135,8 @@ export type PlanOptions = {
 	toolDiameter: number;
 	stepover: number;
 	stepdown: number;
+	/** Rings (default) or adaptive clearing. */
+	strategy?: Strategy;
 };
 
 /** Everything for one picture and one set of settings: levels, passes and what the bit reaches. */

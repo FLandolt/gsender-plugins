@@ -42,3 +42,7 @@ npm run build   # produces ui/, which gSender serves
 Pick **Picture** to clear the shape in an image as a pocket. Upload the picture, move the **threshold** until the preview shows the shape in black (switch on **Invert** if the shape is the light part) and set its real size. Holes in the shape stay standing as islands.
 
 A picture is cleared in rings one stepover apart, from the middle of each area outwards, ending on the wall for a clean edge (like the rectangle and circle spiral). Each level ramps in along its first ring, so the bit doesn't plunge straight down. Parts of the shape narrower than the bit stay uncut, and the plugin warns when that is more than a sliver. X0 Y0 is a corner or the centre of the whole picture, as in Height Map.
+
+### Clearing strategy for pictures
+
+For the Picture shape the **Clearing** step offers **Rings** (default, from the middle outwards) or **Adaptive**, which keeps the load on the bit about even: no full-width cuts, smooth turns, links through cleared ground with the bit down, and a final wall pass at exactly the stepover. See the Height Map README for how it works. Rectangles and circles always use the spiral.
