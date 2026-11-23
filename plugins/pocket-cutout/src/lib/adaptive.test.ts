@@ -93,6 +93,24 @@ describe("adaptive clearing", () => {
 		const p99 = (l: number[]) => [...l].sort((x, y) => x - y)[Math.floor(l.length * 0.99)];
 		expect(p99(a.loads)).toBeLessThan(p99(b.loads));
 	});
+	it("runs smoothly: few sharp turns", () => {
+		// Share of the path (sampled every 0.5 mm) where the heading turns more than 30° within 1 mm.
+		let sharp = 0, all = 0;
+		const s = adaptive[0];
+		const pts: Pt[] = [];
+		for (let k = 1; k < s.length; k += 1) {
+			const p = s[k - 1], q = s[k], n = Math.max(1, Math.ceil(Math.hypot(q.x - p.x, q.y - p.y) / 0.5));
+			for (let t = 0; t < n; t += 1) pts.push({ x: p.x + ((q.x - p.x) * t) / n, y: p.y + ((q.y - p.y) * t) / n });
+		}
+		for (let k = 2; k + 2 < pts.length; k += 1) {
+			const h1 = Math.atan2(pts[k].y - pts[k - 2].y, pts[k].x - pts[k - 2].x), h2 = Math.atan2(pts[k + 2].y - pts[k].y, pts[k + 2].x - pts[k].x);
+			let d = Math.abs(h2 - h1);
+			if (d > Math.PI) d = 2 * Math.PI - d;
+			all += 1;
+			if (d > Math.PI / 6) sharp += 1;
+		}
+		expect(sharp / all).toBeLessThan(0.1);
+	});
 	it("stays down: one stroke for the clearing plus the wall passes", () => {
 		expect(adaptive.length).toBeLessThanOrEqual(4);
 	});

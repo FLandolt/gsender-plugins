@@ -9,7 +9,8 @@
  *   and counts, for each, how much material its disc would remove (the engagement). It takes the one
  *   closest to the target load (what a straight cut at the stepover removes per step), turning as
  *   little as it can and preferring material on its left, which is climb milling with a clockwise
- *   spindle. Headings that would load the bit much more than the target are refused. The result is
+ *   spindle. It steers with momentum (at most 45° per step, and changing how fast it turns costs
+ *   too), and the finished path has its corners rounded, so it runs smoothly instead of wobbling. Headings that would load the bit much more than the target are refused. The result is
  *   a smooth, spiralling path that follows the edge of the material at a steady load.
  * - Where it has to start inside solid material it first cuts a small circle (ramped in by the
  *   writer), so it never ploughs a full-width slot.
@@ -247,9 +248,15 @@ export const adaptiveStrokes = (grid: Grid, field: Float32Array, allowed: Uint8A
 	const target = Math.max(1, (o.stepover * stepLen) / (cell * cell));
 	const most = target * 1.6;
 	const full = disc.length;
+	// Steering: fine headings within ±45° per step (a smallest turning radius), wider ones only when
+	// those are all blocked, and the rest of the way round only at the end of a cut.
+	const deg = (a: number) => (a * Math.PI) / 180;
 	const turns: number[] = [];
-	for (let a = -90; a <= 90; a += 15) turns.push((a * Math.PI) / 180);
+	const LIMIT = 45;
+	for (let a = -LIMIT; a <= LIMIT; a += 5) turns.push(deg(a));
 	turns.sort((a, b) => Math.abs(a) - Math.abs(b));
+	const wide: number[] = [];
+	for (let a = LIMIT + 10; a <= 90; a += 10) wide.push(deg(a), deg(-a));
 	// When nothing lies ahead (the end of a cut), look the rest of the way round before searching further.
 	const behind: number[] = [];
 	for (let a = 105; a <= 255; a += 15) behind.push((a * Math.PI) / 180);
@@ -259,6 +266,7 @@ export const adaptiveStrokes = (grid: Grid, field: Float32Array, allowed: Uint8A
 	let stroke: Stroke | null = null;
 	let pos: Pt | null = null;
 	let heading = 0;
+	let lastTurn = 0;
 	const maxSteps = o.maxSteps ?? 400000;
 
 	for (let guard = 0; guard < maxSteps && remaining > tail; guard += 1) {
@@ -275,6 +283,7 @@ export const adaptiveStrokes = (grid: Grid, field: Float32Array, allowed: Uint8A
 				const end: Pt = way[way.length - 1], before: Pt = way[way.length - 2];
 				pos = end;
 				heading = Math.atan2(end.y - before.y, end.x - before.x);
+				lastTurn = 0;
 				continue;
 			}
 			const start = findStart(pos);
@@ -331,8 +340,9 @@ export const adaptiveStrokes = (grid: Grid, field: Float32Array, allowed: Uint8A
 		const here: Pt = pos as Pt;
 		let pick: { q: Pt; t: number; score: number } | null = null;
 		let gentlest: { q: Pt; t: number; n: number } | null = null;
-		for (const [ti, turn] of [...turns, ...behind].entries()) {
-			if (ti === turns.length && (pick || gentlest)) break;
+		const options = [...turns, ...wide, ...behind];
+		for (const [ti, turn] of options.entries()) {
+			if ((ti === turns.length || ti === turns.length + wide.length) && (pick || gentlest)) break;
 			const t = heading + turn;
 			const dx = Math.cos(t), dy = Math.sin(t);
 			const q: Pt = { x: here.x + stepLen * dx, y: here.y + stepLen * dy };
@@ -343,9 +353,11 @@ export const adaptiveStrokes = (grid: Grid, field: Float32Array, allowed: Uint8A
 			if (!gentlest || n < gentlest.n) gentlest = { q, t, n };
 			if (n > most) continue;
 			// Which side the material is on only matters for a heading that could win.
-			if (pick && Math.abs(n - target) / target + Math.abs(turn) * 0.15 >= pick.score) continue;
+			// Momentum: changing how fast it turns costs too, so it doesn't wobble between headings.
+			const steer = Math.abs(turn) * 0.1 + Math.abs(turn - lastTurn) * 0.35;
+			if (pick && Math.abs(n - target) / target + steer >= pick.score) continue;
 			const e = engage(q, dx, dy);
-			const score = Math.abs(e.n - target) / target + Math.abs(turn) * 0.15 + (e.right / Math.max(1, e.n)) * 0.6;
+			const score = Math.abs(e.n - target) / target + steer + (e.right / Math.max(1, e.n)) * 0.6;
 			if (!pick || score < pick.score) pick = { q, t, score };
 		}
 		// Only heavy moves left here: take the lightest, if it is still well short of a slot.
@@ -357,12 +369,34 @@ export const adaptiveStrokes = (grid: Grid, field: Float32Array, allowed: Uint8A
 		}
 		sweep(here, step.q);
 		pos = step.q;
+		let turned = step.t - heading;
+		while (turned > Math.PI) turned -= 2 * Math.PI;
+		while (turned < -Math.PI) turned += 2 * Math.PI;
+		lastTurn = Math.abs(turned) <= deg(LIMIT) ? turned : 0;
 		heading = step.t;
 		stroke!.push(pos);
 	}
 
+	// Rounded corners (Chaikin: each corner cut a quarter of the way in, twice). A rounded point is
+	// kept only where the whole bit still fits; elsewhere the corner stays as it was.
+	const fits = (p: Pt) => {
+		const [i, j] = ij(p);
+		return i >= 0 && j >= 0 && i < w && j < h && field[j * w + i] > 0;
+	};
+	const round = (pts: Pt[]) => {
+		const outPts: Pt[] = [pts[0]];
+		for (let k = 0; k + 1 < pts.length; k += 1) {
+			const a = pts[k], b = pts[k + 1];
+			const q = { x: a.x * 0.75 + b.x * 0.25, y: a.y * 0.75 + b.y * 0.25 };
+			const r = { x: a.x * 0.25 + b.x * 0.75, y: a.y * 0.25 + b.y * 0.75 };
+			if (k > 0) outPts.push(fits(q) ? q : a);
+			if (k + 2 < pts.length) outPts.push(fits(r) ? r : b);
+		}
+		outPts.push(pts[pts.length - 1]);
+		return outPts;
+	};
 	// Fewer, longer moves where the path runs straight.
-	const out = strokes.filter((s) => s.length >= 2).map((s) => simplifyLine(s, cell * 0.15));
+	const out = strokes.filter((s) => s.length >= 2).map((s) => simplifyLine(round(round(s)), cell * 0.08));
 	// One pass along the walls for a clean edge.
 	return [...out, ...wallRings(grid, field)];
 };
