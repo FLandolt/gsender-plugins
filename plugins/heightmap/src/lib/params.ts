@@ -31,6 +31,8 @@ export type Params = {
 	stepover: number;
 	/** How a picture's areas are cleared: rings from the inside out, or adaptive (an even load on the bit). */
 	strategy: Strategy;
+	/** Adaptive only: cut every arc climb (more travel) instead of back and forth. */
+	climbOnly: boolean;
 	/** Most the bit cuts down in one pass, mm. A deep step is cut in several passes. */
 	stepdown: number;
 	/** Where X0 Y0 sits on the picture's rectangle. */
@@ -55,6 +57,7 @@ export const defaultParams = (): Params => ({
 	toolDiameter: 4,
 	stepover: 0.4,
 	strategy: "rings",
+	climbOnly: false,
 	stepdown: 2,
 	origin: "lower-left",
 	feedrate: 1200,

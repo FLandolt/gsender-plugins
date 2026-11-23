@@ -31,7 +31,7 @@ export const generateGcode = (p: Params, plan: Plan, description: string): strin
 	out.push(comment(`Picture: ${description}, ${fmt(plan.width, 2)} x ${fmt(plan.height, 2)} mm${p.invert ? ", inverted (light = deep)" : ", dark = deep"}`));
 	out.push(comment(`Levels: ${levels.map((d) => `-${fmt(d, 3)}`).join(" / ")} mm (${p.steps} step${p.steps === 1 ? "" : "s"} down)`));
 	out.push(comment(`Tool: endmill ${fmt(p.toolDiameter, 3)} mm, stepover ${fmt(p.toolDiameter * p.stepover, 3)} mm, ${plan.passes.length} pass(es) of at most ${fmt(p.stepdown, 3)} mm`));
-	out.push(comment(p.strategy === "adaptive" ? "Clearing: adaptive (an even load on the bit), then once along the walls" : "Clearing: rings from the middle of each area outwards, ending on the wall"));
+	out.push(comment(p.strategy === "adaptive" ? `Clearing: adaptive (smooth arcs from the middle out, an even load on the bit, ${p.climbOnly ? "climb only" : "both ways"}), then once along the walls` : "Clearing: rings from the middle of each area outwards, ending on the wall"));
 	out.push(comment(`Feeds: cut ${fmt(p.feedrate, 0)}, plunge ${fmt(p.plungeRate, 0)} mm/min, spindle ${fmt(p.spindleRpm, 0)} RPM`));
 	out.push(comment(`Work zero: ${POSITION_NAMES[p.origin]} of the picture (X0 Y0), Z0 = top of stock`));
 

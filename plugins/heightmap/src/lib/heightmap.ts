@@ -137,6 +137,8 @@ export type PlanOptions = {
 	stepdown: number;
 	/** Rings (default) or adaptive clearing. */
 	strategy?: Strategy;
+	/** Adaptive only: every arc climb instead of back and forth. */
+	climbOnly?: boolean;
 };
 
 /** Everything for one picture and one set of settings: levels, passes and what the bit reaches. */

@@ -41,7 +41,7 @@ const generatePicture = (p: Params, plan: PicturePocket, name: string): string =
 	out.push(
 		comment(
 			p.strategy === "adaptive"
-				? "Clearing: adaptive (an even load on the bit, staying down through cleared ground), then once along the walls; ramped entries"
+				? `Clearing: adaptive (smooth arcs from the middle out, an even load on the bit, ${p.climbOnly ? "climb only" : "both ways"}), then once along the walls`
 				: "Clearing: rings from the middle outwards, ending on the wall; each level ramps in along its first ring",
 		),
 	);

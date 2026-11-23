@@ -45,4 +45,4 @@ A picture is cleared in rings one stepover apart, from the middle of each area o
 
 ### Clearing strategy for pictures
 
-For the Picture shape the **Clearing** step offers **Rings** (default, from the middle outwards) or **Adaptive**, which keeps the load on the bit about even: no full-width cuts, smooth turns, links through cleared ground with the bit down, and a final wall pass at exactly the stepover. See the Height Map README for how it works. Rectangles and circles always use the spiral.
+For the Picture shape the **Clearing** step offers **Rings** (default, from the middle outwards) or **Adaptive**: smooth arcs spreading from the middle of the shape like a ripple, one stepover apart, for an even load on the bit, with arcs going **Both ways** (faster) or **Climb only**. See the Height Map README for how it works. Rectangles and circles always use the spiral.

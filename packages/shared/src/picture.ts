@@ -218,8 +218,12 @@ export const distanceToOutside = (mask: Uint8Array, w: number, h: number, edgeCo
 	return out;
 };
 
-/** Outlines where `f` is positive, by marching squares, in cell units (a cell's centre is at i + ½). */
-export const traceContours = (f: Float32Array, w: number, h: number): Pt[][] => {
+/**
+ * Outlines where `f` is positive, by marching squares, in cell units (a cell's centre is at i + ½).
+ * With `near`, only the squares touching those cells are looked at: much quicker when the caller
+ * knows where the outline can be (every cell where `f` changes sign must be in it).
+ */
+export const traceContours = (f: Float32Array, w: number, h: number, near?: ArrayLike<number>): Pt[][] => {
 	const at = (x: number, y: number) => (x < 1 || y < 1 || x > w || y > h ? -1 : f[(y - 1) * w + (x - 1)]);
 	type S = { a: string; b: string; pa: Pt; pb: Pt };
 	const segs: S[] = [];
@@ -242,11 +246,10 @@ export const traceContours = (f: Float32Array, w: number, h: number): Pt[][] => 
 		3: [[3, 1]], 6: [[0, 2]], 12: [[1, 3]], 9: [[0, 2]],
 		14: [[3, 0]], 13: [[0, 1]], 11: [[1, 2]], 7: [[2, 3]],
 	};
-	for (let j = 0; j < h + 1; j += 1)
-		for (let i = 0; i < w + 1; i += 1) {
+	const square = (i: number, j: number) => {
 			const fa = at(i, j), fb = at(i + 1, j), fc = at(i + 1, j + 1), fd = at(i, j + 1);
 			const idx = (fa > 0 ? 1 : 0) | (fb > 0 ? 2 : 0) | (fc > 0 ? 4 : 0) | (fd > 0 ? 8 : 0);
-			if (idx === 0 || idx === 15) continue;
+			if (idx === 0 || idx === 15) return;
 			let pairs: [number, number][];
 			if (idx === 5) pairs = (fa + fb + fc + fd) / 4 > 0 ? [[0, 1], [2, 3]] : [[3, 0], [1, 2]];
 			else if (idx === 10) pairs = (fa + fb + fc + fd) / 4 > 0 ? [[3, 0], [1, 2]] : [[0, 1], [2, 3]];
@@ -257,7 +260,21 @@ export const traceContours = (f: Float32Array, w: number, h: number): Pt[][] => 
 				segs.push({ a: A.key, b: B.key, pa: A.p, pb: B.p });
 				for (const k of [A.key, B.key]) (byEdge.get(k) ?? byEdge.set(k, []).get(k)!).push(id);
 			}
+		};
+	if (near) {
+		// Square (i, j) has corner pixels (i-1..i, j-1..j): each listed pixel touches four squares.
+		const seen = new Uint8Array((w + 1) * (h + 1));
+		for (let n = 0; n < near.length; n += 1) {
+			const k = near[n], ci = k % w, cj = (k - ci) / w;
+			for (let dj = 0; dj <= 1; dj += 1)
+				for (let di = 0; di <= 1; di += 1) {
+					const i = ci + di, j = cj + dj, q = j * (w + 1) + i;
+					if (seen[q]) continue;
+					seen[q] = 1;
+					square(i, j);
+				}
 		}
+	} else for (let j = 0; j < h + 1; j += 1) for (let i = 0; i < w + 1; i += 1) square(i, j);
 	const used = new Uint8Array(segs.length);
 	const rings: Pt[][] = [];
 	for (let s = 0; s < segs.length; s += 1) {

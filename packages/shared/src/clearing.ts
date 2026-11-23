@@ -14,7 +14,7 @@
  * area with a large stepover) is cleaned up first with a few short rows.
  */
 
-import { adaptiveStrokes } from "./adaptive";
+import { wavefrontStrokes } from "./wavefront";
 import { cellCentre, distanceToOutside, type Grid, pointInRing, type Pt, ringArea, ringsToMm, simplifyRing, traceContours } from "./picture";
 
 /** One cut at constant depth: a polyline in mm (picture coordinates, Y up). Closed strokes end where they start. */
@@ -214,7 +214,7 @@ export const ringStrokes = (grid: Grid, field: Float32Array, allowed: Uint8Array
 	return strokes;
 };
 
-/** `rings`: from the inside out, one stepover apart. `adaptive`: an even load on the bit (see adaptive.ts). */
+/** `rings`: from the inside out, one stepover apart. `adaptive`: an even load on the bit, in smooth arcs (see wavefront.ts). */
 export type Strategy = "rings" | "adaptive";
 
 /**
@@ -225,7 +225,7 @@ export const planClearing = (
 	grid: Grid,
 	target: Uint8Array,
 	levels: number[],
-	o: { toolDiameter: number; stepover: number; stepdown: number; strategy?: Strategy },
+	o: { toolDiameter: number; stepover: number; stepdown: number; strategy?: Strategy; climbOnly?: boolean },
 ): Clearing => {
 	const { w, h, cell } = grid;
 	const r = o.toolDiameter / 2;
@@ -248,7 +248,10 @@ export const planClearing = (
 			allowed[i] = field[i] > 0 ? 1 : 0;
 		}
 
-		const strokes = o.strategy === "adaptive" ? adaptiveStrokes(grid, field, allowed, area, { stepover: step, radius: r }) : ringStrokes(grid, field, allowed, step, r);
+		const strokes =
+			o.strategy === "adaptive"
+				? wavefrontStrokes(grid, field, allowed, { stepover: step, radius: r, bothWays: !o.climbOnly })
+				: ringStrokes(grid, field, allowed, step, r);
 		passes.push({ depth, strokes });
 
 		// Where the bit reaches at a level's final depth: within its radius of an allowed centre.

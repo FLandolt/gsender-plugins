@@ -97,7 +97,7 @@ const App = () => {
 		// Without a depth yet, plan with a stand-in so the depth map can still show the levels.
 		const depth = settled.depth > 0 ? settled.depth : settled.steps;
 		return planCut(picture.gray, { ...settled, ...s, depth, stepdown: settled.depth > 0 ? settled.stepdown : depth });
-	}, [planOk, picture, settled.sizeBy, settled.size, settled.steps, settled.depth, settled.invert, settled.smoothing, settled.toolDiameter, settled.stepover, settled.stepdown, settled.strategy]);
+	}, [planOk, picture, settled.sizeBy, settled.size, settled.steps, settled.depth, settled.invert, settled.smoothing, settled.toolDiameter, settled.stepover, settled.stepdown, settled.strategy, settled.climbOnly]);
 
 	const fresh = settled === params;
 	const code = useMemo(
@@ -215,9 +215,27 @@ const App = () => {
 					/>
 					<Hint>
 						{params.strategy === "adaptive"
-							? "Adaptive keeps the load on the bit about even: it never buries the bit in a full-width cut, so corners don't spike the radial force. The path is a little longer. With an even load you can try a smaller stepover and a deeper stepdown."
+							? "Adaptive spreads out from the middle of each area like a ripple, in smooth arcs one stepover apart, so the bit takes about the same amount all the way: no full-width cuts, no spikes in corners. With an even load you can try a smaller stepover and a deeper stepdown."
 							: "Rings cut from the middle of each area outwards, one stepover apart, ending on the wall: the shortest path."}
 					</Hint>
+					{params.strategy === "adaptive" && (
+						<>
+							<Segmented
+								label="Arc direction"
+								value={params.climbOnly ? "climb" : "both"}
+								onChange={(v) => update({ climbOnly: v === "climb" })}
+								options={[
+									{ value: "both", label: "Both ways" },
+									{ value: "climb", label: "Climb only" },
+								]}
+							/>
+							<Hint>
+								{params.climbOnly
+									? "Every arc is cut climb, so the force on the bit is always on the same side. The bit travels back after each arc: slower."
+									: "Arcs go back and forth: the bit just steps along the wall to the next one. Half the arcs are conventional; the load stays the same. Faster."}
+							</Hint>
+						</>
+					)}
 					<Hint>Either way the bit never cuts into a higher level, and the last pass runs along the walls for a clean edge.</Hint>
 				</>
 			),

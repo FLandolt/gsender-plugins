@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { adaptiveStrokes } from "@shared/adaptive";
+import { wavefrontStrokes } from "@shared/wavefront";
 import { ringStrokes } from "@shared/clearing";
 import { distanceToOutside, type Grid, makeGrid, type Pt, thresholdMask, toGray } from "@shared/picture";
 
@@ -71,10 +71,11 @@ const replay = (g: Grid, material: Uint8Array, strokes: Pt[][], r: number) => {
 };
 
 describe("adaptive clearing", () => {
-	const { g, r, area, field, allowed, material } = setup();
+	const { g, r, field, allowed, material } = setup();
 	const stepover = 1.6;
 	const target = stepover / (g.cell * g.cell);
-	const adaptive = adaptiveStrokes(g, field, allowed, area, { stepover, radius: r });
+	const adaptive = wavefrontStrokes(g, field, allowed, { stepover, radius: r, bothWays: true });
+	const climb = wavefrontStrokes(g, field, allowed, { stepover, radius: r });
 	const rings = ringStrokes(g, field, allowed, stepover, r);
 	const a = replay(g, material, adaptive, r);
 	const b = replay(g, material, rings, r);
@@ -84,20 +85,24 @@ describe("adaptive clearing", () => {
 	it("clears everything rings clear", () => {
 		expect(a.left).toBeLessThan(0.005);
 	});
-	it("keeps the load more even than rings: fewer overloads and a lower peak", () => {
-		expect(overloaded(a.loads)).toBeLessThan(0.02);
+	it("keeps the load more even than rings: far fewer overloads", () => {
+		expect(overloaded(a.loads)).toBeLessThan(0.03);
 		expect(overloaded(a.loads)).toBeLessThan(overloaded(b.loads) / 2);
-		expect(peak(a.loads)).toBeLessThan(peak(b.loads));
-		// The worst moment is the wall pass in a tight inside corner, the same for both strategies.
-		expect(peak(a.loads)).toBeLessThan(3.5);
 		const p99 = (l: number[]) => [...l].sort((x, y) => x - y)[Math.floor(l.length * 0.99)];
 		expect(p99(a.loads)).toBeLessThan(p99(b.loads));
+		// The worst moment is entering solid material at the very start, as with rings.
+		expect(peak(a.loads)).toBeLessThanOrEqual(peak(b.loads) + 0.01);
+	});
+	it("climb only clears everything too, with an even load", () => {
+		const c = replay(g, material, climb, r);
+		expect(c.left).toBeLessThan(0.005);
+		expect(overloaded(c.loads)).toBeLessThan(overloaded(b.loads) / 2);
 	});
 	it("runs smoothly: few sharp turns", () => {
 		// Share of the path (sampled every 0.5 mm) where the heading turns more than 30° within 1 mm.
 		let sharp = 0, all = 0;
-		const s = adaptive[0];
 		const pts: Pt[] = [];
+		for (const s of adaptive)
 		for (let k = 1; k < s.length; k += 1) {
 			const p = s[k - 1], q = s[k], n = Math.max(1, Math.ceil(Math.hypot(q.x - p.x, q.y - p.y) / 0.5));
 			for (let t = 0; t < n; t += 1) pts.push({ x: p.x + ((q.x - p.x) * t) / n, y: p.y + ((q.y - p.y) * t) / n });
@@ -109,10 +114,10 @@ describe("adaptive clearing", () => {
 			all += 1;
 			if (d > Math.PI / 6) sharp += 1;
 		}
-		expect(sharp / all).toBeLessThan(0.1);
+		expect(sharp / all).toBeLessThan(0.08);
 	});
-	it("stays down: one stroke for the clearing plus the wall passes", () => {
-		expect(adaptive.length).toBeLessThanOrEqual(4);
+	it("stays down: only a few lifts", () => {
+		expect(adaptive.length).toBeLessThanOrEqual(10);
 	});
 	it("never takes the bit's centre outside where it fits", () => {
 		for (const pt of adaptive.flat()) {

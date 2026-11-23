@@ -41,6 +41,8 @@ export type Params = {
 	stepover: number;
 	/** How a picture's areas are cleared: rings from the inside out, or adaptive (an even load on the bit). */
 	strategy: Strategy;
+	/** Adaptive only: cut every arc climb (more travel) instead of back and forth. */
+	climbOnly: boolean;
 	/** Which way the spiral turns. Clockwise is climb milling; counter-clockwise is conventional. */
 	rotation: Rotation;
 	/** Where X0 Y0 sits on the pocket: a corner of its bounding box or the centre. */
@@ -74,6 +76,7 @@ export const defaultParams = (): Params => ({
 	stepdown: 2,
 	stepover: 0.4,
 	strategy: "rings",
+	climbOnly: false,
 	rotation: "cw",
 	origin: "center",
 	feedrate: 1200,
