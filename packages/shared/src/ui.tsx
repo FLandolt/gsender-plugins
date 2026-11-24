@@ -291,9 +291,9 @@ export const Stepper = ({
 };
 
 export const Stat = ({ label, value }: { label: string; value: string }) => (
-	<div className="min-w-0 rounded-lg border border-gray-200 bg-white px-3 py-2 dark:border-slate-700 dark:bg-slate-900">
-		<div className="truncate font-mono text-[10px] uppercase tracking-[0.08em] text-gray-500 dark:text-slate-400">{label}</div>
-		<div className="truncate font-mono text-[16px] font-medium tabular-nums">{value}</div>
+	<div className="min-w-0 bg-white px-5 py-4 dark:bg-slate-900">
+		<div className="truncate text-[12px] font-medium text-gray-500 dark:text-slate-400">{label}</div>
+		<div className="mt-1 truncate font-mono text-[24px] font-medium leading-tight tabular-nums">{value}</div>
 	</div>
 );
 
