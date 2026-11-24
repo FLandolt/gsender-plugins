@@ -1,7 +1,7 @@
 {
 	"id": "io.github.flandolt.pocket-cutout",
 	"name": "Pocket Cutout",
-	"version": "0.1.0",
+	"version": "0.0.20",
 	"engine": ">=1.6.0",
 	"ui": {
 		"entry": "ui/index.html",

@@ -17,11 +17,11 @@ export type Status = { ok: boolean; text: string } | null;
 
 /** Buttons as on the website: black (white in dark mode) for the main action, hairline outline for the rest. */
 const baseBtn =
-	"inline-flex h-11 shrink-0 cursor-pointer select-none items-center justify-center gap-1.5 rounded-lg px-4 text-sm font-medium transition duration-150 active:scale-[0.97] disabled:cursor-default disabled:opacity-35 disabled:active:scale-100";
+	"inline-flex h-[var(--ctl)] shrink-0 cursor-pointer select-none items-center justify-center gap-1.5 rounded-lg px-4 text-sm font-medium transition duration-150 active:scale-[0.97] disabled:cursor-default disabled:opacity-35 disabled:active:scale-100";
 
-const navBtn = `${baseBtn} border border-gray-200 bg-white text-gray-900 shadow-[0_1px_2px_rgb(0_0_0/0.04)] hover:border-gray-900 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100 dark:hover:border-slate-300`;
+const navBtn = `${baseBtn} border border-gray-200 bg-paper text-gray-900 shadow-[0_1px_2px_rgb(0_0_0/0.04)] hover:border-gray-900 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100 dark:hover:border-slate-300`;
 
-export const primaryBtn = `${baseBtn} bg-gray-900 px-5 text-white hover:bg-gray-700 dark:bg-slate-100 dark:text-gray-900 dark:hover:bg-white`;
+export const primaryBtn = `${baseBtn} bg-blue-600 px-5 text-white hover:bg-blue-700 dark:bg-blue-500 dark:text-slate-950 dark:hover:bg-blue-400`;
 
 export const secondaryBtn = navBtn;
 
@@ -99,8 +99,8 @@ const PluginLayout = ({
 	}, [code]);
 
 	return (
-		<div className="flex h-full flex-col bg-gray-50 text-gray-900 antialiased dark:bg-black dark:text-slate-100">
-			<header className="shrink-0 border-b border-gray-200 bg-white/80 px-4 pt-2.5 backdrop-blur-xl backdrop-saturate-150 dark:border-slate-800 dark:bg-black/70">
+		<div className="flex h-full flex-col bg-gray-50 text-gray-900 antialiased dark:bg-slate-950 dark:text-slate-100">
+			<header className="shrink-0 border-b border-gray-200 bg-white/80 px-4 pt-2.5 backdrop-blur-xl backdrop-saturate-150 dark:border-slate-800 dark:bg-slate-950/70">
 				{/* Title on the left, the controls on the right: Back / Next, G-code and the main actions. */}
 				<div className="flex flex-wrap items-center gap-x-3 gap-y-2">
 					<div className="flex min-w-0 flex-1 basis-56 items-center gap-2.5">
@@ -136,7 +136,7 @@ const PluginLayout = ({
 								type="button"
 								aria-current={current ? "step" : undefined}
 								onClick={() => setIndex(i)}
-								className={`relative flex min-h-11 shrink-0 cursor-pointer select-none items-center gap-2 rounded-full py-1 pl-1.5 pr-4 text-sm font-medium transition duration-150 active:scale-[0.97] ${
+								className={`relative flex h-[var(--ctl)] shrink-0 cursor-pointer select-none items-center gap-2 rounded-full pl-1.5 pr-4 text-sm font-medium transition duration-150 active:scale-[0.97] ${
 									current
 										? "bg-gray-900 text-white dark:bg-slate-100 dark:text-gray-900"
 										: "text-gray-500 hover:bg-gray-100 hover:text-gray-900 dark:text-slate-400 dark:hover:bg-slate-800 dark:hover:text-slate-100"
@@ -154,7 +154,7 @@ const PluginLayout = ({
 									{i + 1}
 								</span>
 								{s.label}
-								{s.issue && <span className="absolute right-1.5 top-1.5 h-2 w-2 rounded-full bg-red-500 ring-2 ring-white dark:ring-black" aria-label="needs attention" />}
+								{s.issue && <span className="absolute right-1.5 top-1.5 h-2 w-2 rounded-full bg-red-500 ring-2 ring-white dark:ring-slate-950" aria-label="needs attention" />}
 							</button>
 						);
 					})}
@@ -187,7 +187,7 @@ const PluginLayout = ({
 						<div className="flex flex-col gap-4">{step.content}</div>
 					</div>
 					{at < steps.length - 1 && (
-						<button type="button" onClick={() => setIndex(at + 1)} className={`${navBtn} mt-3 h-12 w-full`}>
+						<button type="button" onClick={() => setIndex(at + 1)} className={`${navBtn} mt-3 w-full`}>
 							Next: {steps[at + 1].label} <Chevron dir="right" />
 						</button>
 					)}

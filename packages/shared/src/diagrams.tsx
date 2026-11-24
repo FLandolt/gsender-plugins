@@ -11,9 +11,9 @@ import type { Units } from "./units";
 
 const WOOD = "#d6b88a";
 const WOOD_EDGE = "#8b6b3d";
-const BIT = "#52a8ff";
-const BIT_EDGE = "#0070f3";
-const SHANK = "#cbd5e1";
+const BIT = "#e8955f";
+const BIT_EDGE = "#d4602a";
+const SHANK = "#c9cac3";
 const TAB = "#b08855";
 const ALERT = "#dc2626";
 
@@ -76,7 +76,7 @@ const EndMill = ({ cx, bottom, width, top }: { cx: number; bottom: number; width
 		stripes.push(<path key={y} d={`M${cx - width / 2} ${y}L${cx + width / 2} ${y - Math.max(3, width * 0.35)}`} stroke={BIT_EDGE} strokeWidth="0.8" />);
 	return (
 		<g>
-			<rect x={cx - shankW / 2} y={top} width={shankW} height={Math.max(0, fluteTop - top)} fill={SHANK} stroke="#94a3b8" strokeWidth="1" />
+			<rect x={cx - shankW / 2} y={top} width={shankW} height={Math.max(0, fluteTop - top)} fill={SHANK} stroke="#9a9b94" strokeWidth="1" />
 			<rect x={cx - width / 2} y={fluteTop} width={width} height={flute} fill={BIT} stroke={BIT_EDGE} strokeWidth="1.2" rx="1" />
 			{stripes}
 		</g>

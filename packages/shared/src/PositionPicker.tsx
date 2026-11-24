@@ -68,7 +68,7 @@ const PositionPicker = ({
 							onClick={() => onChange(s.pos)}
 							className={`absolute h-12 w-12 -translate-x-1/2 -translate-y-1/2 cursor-pointer rounded-full border-2 transition active:scale-90 ${
 								active
-									? "border-blue-600 bg-blue-600 shadow-[0_0_0_6px_rgb(0_112_243/0.15)]"
+									? "border-blue-600 bg-blue-600 shadow-[0_0_0_6px_rgb(212_96_42/0.15)]"
 									: "border-gray-300 bg-white shadow-[0_1px_3px_rgb(0_0_0/0.12)] hover:border-gray-900 dark:border-slate-600 dark:bg-slate-800 dark:hover:border-slate-300"
 							}`}
 							style={{ left: `${(s.x / BOX.W) * 100}%`, top: `${(s.y / BOX.H) * 100}%` }}

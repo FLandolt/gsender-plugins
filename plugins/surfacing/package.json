@@ -1,7 +1,7 @@
 {
   "name": "surfacing",
   "private": true,
-  "version": "0.1.0",
+  "version": "0.0.20",
   "type": "module",
   "description": "gSender plugin that surfaces (faces) a rectangular area with straight passes",
   "scripts": {

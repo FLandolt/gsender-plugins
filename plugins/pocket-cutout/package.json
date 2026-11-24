@@ -1,7 +1,7 @@
 {
   "name": "pocket-cutout",
   "private": true,
-  "version": "0.1.0",
+  "version": "0.0.20",
   "type": "module",
   "description": "gSender plugin that clears a rectangular or round pocket, spiralling down, with a spiral or zig-zag clearing pattern",
   "scripts": {
