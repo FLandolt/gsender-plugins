@@ -56,8 +56,8 @@ const BitDiagram = ({ bit, maxDepth, tooDeep, units }: { bit: CheckedBit | null;
 		<div className="dot-grid rounded-xl border border-gray-200 bg-gray-50 p-3 text-gray-700 dark:border-slate-800 dark:bg-slate-950 dark:text-slate-300">
 			<svg viewBox={`0 0 ${W} ${H}`} className="mx-auto block w-full" style={{ maxHeight: 260 }} role="img" aria-label={`A ${bit.angle} degree V-bit, ${len(bit.diameter)} wide, and the groove it cuts at the depth you set`}>
 				{/* The bit: shank above, cone below */}
-				<rect x={bx - shankHalf} y={coneTop - shank * s} width={2 * shankHalf} height={shank * s} fill="#cbd5e1" stroke="#94a3b8" strokeWidth="1" />
-				<polygon points={poly.map((p) => p.join(",")).join(" ")} fill="#52a8ff" stroke="#0070f3" strokeWidth="1.2" />
+				<rect x={bx - shankHalf} y={coneTop - shank * s} width={2 * shankHalf} height={shank * s} fill="#c9cac3" stroke="#9a9b94" strokeWidth="1" />
+				<polygon points={poly.map((p) => p.join(",")).join(" ")} fill="#e8955f" stroke="#d4602a" strokeWidth="1.2" />
 				{/* The width across the top of the cone, carried up past the shank */}
 				<g {...ink} strokeDasharray="2 2" opacity="0.6">
 					<path d={`M${bx - topHalf} ${coneTop}V${dimY - 4}M${bx + topHalf} ${coneTop}V${dimY - 4}`} />

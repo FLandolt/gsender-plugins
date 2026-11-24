@@ -1,7 +1,7 @@
 {
   "name": "heightmap",
   "private": true,
-  "version": "0.0.1",
+  "version": "0.0.20",
   "type": "module",
   "description": "gSender plugin that carves a picture or height map into terraced levels, like a contour map",
   "scripts": {

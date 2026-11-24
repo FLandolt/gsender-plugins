@@ -1,4 +1,4 @@
-import { type CSSProperties, type ReactNode, useState } from "react";
+import { type CSSProperties, type KeyboardEvent, type PointerEvent, type ReactNode, useEffect, useRef, useState } from "react";
 
 import { FEED_PRESETS, type FeedPreset } from "./feeds";
 
@@ -23,7 +23,7 @@ export const Card = ({
 );
 
 const inputBase =
-	"h-12 w-full rounded-lg border border-gray-200 bg-white px-3.5 text-[17px] tabular-nums text-gray-900 shadow-[0_1px_2px_rgb(0_0_0/0.04)] outline-none transition placeholder:text-gray-400 hover:border-gray-300 focus:border-gray-900 focus:ring-4 focus:ring-gray-900/[0.07] dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100 dark:placeholder:text-slate-500 dark:hover:border-slate-600 dark:focus:border-slate-200 dark:focus:ring-white/10";
+	"h-[var(--ctl)] w-full rounded-lg border border-gray-200 bg-paper px-3.5 font-mono text-[16px] tabular-nums text-gray-900 shadow-[0_1px_2px_rgb(0_0_0/0.04)] outline-none transition placeholder:text-gray-400 hover:border-gray-300 focus:border-gray-900 focus:ring-4 focus:ring-gray-900/[0.07] dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100 dark:placeholder:text-slate-500 dark:hover:border-slate-600 dark:focus:border-slate-200 dark:focus:ring-white/10";
 const invalidRing = "!border-red-500 !ring-4 !ring-red-500/15";
 
 /** Reads what is typed in a number box. Empty or half-typed ("-", ".") is NaN. Accepts a comma as the decimal mark. */
@@ -57,6 +57,7 @@ const NumInput = ({
 	numeric = false,
 	onBlurValue,
 	allowEmpty = false,
+	style,
 }: {
 	value: number | null;
 	onChange: (v: number) => void;
@@ -70,9 +71,18 @@ const NumInput = ({
 	onBlurValue?: (v: number) => void;
 	/** Empty is a valid answer here (an optional value): don't outline it. */
 	allowEmpty?: boolean;
+	style?: CSSProperties;
 }) => {
 	const [draft, setDraft] = useState<string | null>(null);
 	const text = draft ?? (value === null || !Number.isFinite(value) ? "" : String(value));
+	// A change from outside while the box has focus (the round − / + buttons) replaces what is typed;
+	// what the user types themselves always matches the value, so it is left alone.
+	useEffect(() => {
+		if (draft === null || value === null) return;
+		const typed = parseNumber(draft);
+		if (typed !== value && !(Number.isNaN(typed) && Number.isNaN(value))) setDraft(Number.isFinite(value) ? String(value) : "");
+		// eslint-disable-next-line react-hooks/exhaustive-deps
+	}, [value]);
 	const blank = !allowEmpty && (draft !== null ? Number.isNaN(parseNumber(draft)) : value !== null && Number.isNaN(value));
 	return (
 		<input
@@ -85,6 +95,7 @@ const NumInput = ({
 			aria-invalid={invalid || blank}
 			placeholder={placeholder ?? (blank ? "enter a value" : undefined)}
 			className={`${inputBase} ${className} ${invalid || blank ? invalidRing : ""}`}
+			style={style}
 			value={text}
 			onFocus={(e) => {
 				setDraft(text);
@@ -110,12 +121,84 @@ const NumInput = ({
 	);
 };
 
-const FieldLabel = ({ children }: { children: ReactNode }) => (
-	<span className="text-[13px] font-medium text-gray-600 dark:text-slate-400">{children}</span>
+/** A step that scales with the number: 0.01 below 1, 0.1 below 10, 1 below 100, 10 below 1000, then 100. */
+const autoStep = (v: number): number => {
+	const a = Math.abs(v);
+	return !Number.isFinite(a) || a === 0 ? 1 : a >= 1000 ? 100 : a >= 100 ? 10 : a >= 10 ? 1 : a >= 1 ? 0.1 : 0.01;
+};
+const stepped = (v: number, dir: 1 | -1, step: number) => Number((v + dir * step).toFixed(4));
+
+/** Press once to step; hold to repeat. Keyboard (Enter / Space) steps once. */
+const useRepeat = (step: () => void) => {
+	const latest = useRef(step);
+	latest.current = step;
+	const timers = useRef<{ wait?: number; tick?: number }>({});
+	const stop = () => {
+		window.clearTimeout(timers.current.wait);
+		window.clearInterval(timers.current.tick);
+	};
+	useEffect(() => stop, []);
+	return {
+		onPointerDown: (e: PointerEvent) => {
+			e.preventDefault();
+			latest.current();
+			timers.current.wait = window.setTimeout(() => {
+				timers.current.tick = window.setInterval(() => latest.current(), 80);
+			}, 400);
+		},
+		onPointerUp: stop,
+		onPointerLeave: stop,
+		onPointerCancel: stop,
+		onKeyDown: (e: KeyboardEvent) => {
+			if (e.key === "Enter" || e.key === " ") {
+				e.preventDefault();
+				latest.current();
+			}
+		},
+	};
+};
+
+const roundBtn =
+	"absolute top-2 flex h-8 w-8 cursor-pointer select-none items-center justify-center rounded-full bg-gray-100 text-xl font-light leading-none text-gray-900 transition hover:bg-gray-200 active:scale-90 active:bg-gray-300 disabled:cursor-default disabled:opacity-35 disabled:hover:bg-gray-100 disabled:active:scale-100 dark:bg-slate-700 dark:text-slate-100 dark:hover:bg-slate-600 dark:active:bg-slate-600 dark:disabled:hover:bg-slate-700";
+
+const StepButton = ({ side, onStep, disabled, label }: { side: "left" | "right"; onStep: () => void; disabled: boolean; label: string }) => {
+	const press = useRepeat(onStep);
+	return (
+		<button type="button" tabIndex={-1} aria-label={label} disabled={disabled} className={`${roundBtn} ${side === "left" ? "left-2" : "right-2"}`} {...press}>
+			{side === "left" ? "\u2212" : "+"}
+		</button>
+	);
+};
+
+/** A field with a round − on the left and + on the right, both inside it; the box goes in as children. */
+const Steppable = ({
+	onStep,
+	canDec = true,
+	canInc = true,
+	label,
+	children,
+}: {
+	onStep: (dir: 1 | -1) => void;
+	canDec?: boolean;
+	canInc?: boolean;
+	label: string;
+	children: ReactNode;
+}) => (
+	<span className="relative block">
+		{children}
+		<StepButton side="left" label={`Decrease ${label}`} disabled={!canDec} onStep={() => onStep(-1)} />
+		<StepButton side="right" label={`Increase ${label}`} disabled={!canInc} onStep={() => onStep(1)} />
+	</span>
 );
 
-const Suffix = ({ children }: { children: ReactNode }) => (
-	<span className="pointer-events-none absolute inset-y-0 right-3.5 flex items-center font-mono text-xs text-gray-400 dark:text-slate-500">{children}</span>
+/** Room left and right of the value for the round buttons (2.5 rem each). */
+const padFor = (): CSSProperties => ({ paddingLeft: "2.5rem", paddingRight: "2.5rem", textAlign: "center" });
+
+const FieldLabel = ({ children, unit }: { children: ReactNode; unit?: string }) => (
+	<span className="flex items-baseline justify-between gap-2 text-[13px] font-medium text-gray-600 dark:text-slate-400">
+		<span>{children}</span>
+		{unit ? <span className="font-mono text-xs font-normal text-gray-400 dark:text-slate-500">{unit}</span> : null}
+	</span>
 );
 
 /**
@@ -127,6 +210,7 @@ export const NumberField = ({
 	value,
 	onChange,
 	suffix,
+	step,
 	required = false,
 	invalid = false,
 	hint,
@@ -135,28 +219,35 @@ export const NumberField = ({
 	value: number;
 	onChange: (v: number) => void;
 	suffix?: string;
-	/** @deprecated kept for older call sites; the box accepts any decimal. */
+	/** How far the round − / + buttons move the value. Defaults to a step that scales with the number. */
 	step?: number | "any";
 	/** The value must be more than 0: outline it when it is not. */
 	required?: boolean;
 	invalid?: boolean;
 	hint?: string;
-}) => (
-	<label className="flex flex-col gap-1.5">
-		<FieldLabel>{label}</FieldLabel>
-		<span className="relative block">
-			<NumInput
+}) => {
+	const st = typeof step === "number" ? step : autoStep(value);
+	const known = Number.isFinite(value);
+	return (
+		<label className="flex flex-col gap-2">
+			<FieldLabel unit={suffix}>{label}</FieldLabel>
+			<Steppable
 				label={label}
-				value={value}
-				onChange={onChange}
-				className={suffix ? "pr-16" : ""}
-				invalid={invalid || (required && Number.isFinite(value) && !(value > 0))}
-			/>
-			{suffix ? <Suffix>{suffix}</Suffix> : null}
-		</span>
-		{hint ? <span className="text-[13px] text-gray-500 dark:text-slate-400">{hint}</span> : null}
-	</label>
-);
+				canDec={!required || !known || value - st > 0}
+				onStep={(dir) => onChange(stepped(known ? value : 0, dir, st))}
+			>
+				<NumInput
+					label={label}
+					value={value}
+					onChange={onChange}
+					style={padFor()}
+					invalid={invalid || (required && known && !(value > 0))}
+				/>
+			</Steppable>
+			{hint ? <span className="text-[13px] text-gray-500 dark:text-slate-400">{hint}</span> : null}
+		</label>
+	);
+};
 
 /** − / + counter for whole numbers. The box can be cleared and typed into; it snaps into range when you leave it. */
 export const Stepper = ({
@@ -172,32 +263,29 @@ export const Stepper = ({
 	min?: number;
 	max?: number;
 }) => {
-	const btn =
-		"flex h-12 w-14 shrink-0 cursor-pointer select-none items-center justify-center rounded-lg border border-gray-200 bg-white text-2xl font-light leading-none text-gray-900 shadow-[0_1px_2px_rgb(0_0_0/0.04)] transition hover:border-gray-400 active:scale-95 active:bg-gray-100 disabled:cursor-default disabled:opacity-35 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100 dark:hover:border-slate-500 dark:active:bg-slate-800";
 	const clamp = (v: number) => Math.min(max, Math.max(min, Math.round(v)));
 	const known = Number.isFinite(value);
 	return (
-		<div className="flex flex-col gap-1">
+		<div className="flex flex-col gap-2">
 			<FieldLabel>{label}</FieldLabel>
-			<div className="flex items-center gap-2">
-				<button type="button" className={btn} disabled={known && value <= min} onClick={() => onChange(known ? clamp(value - 1) : min)} aria-label={`Fewer ${label}`}>
-					−
-				</button>
+			<Steppable
+				label={label}
+				canDec={!known || value > min}
+				canInc={!known || value < max}
+				onStep={(dir) => onChange(known ? clamp(value + dir) : min)}
+			>
 				<NumInput
 					label={label}
 					numeric
 					value={value}
-					className="text-center"
+					style={padFor()}
 					invalid={known && (value < min || value > max || !Number.isInteger(value))}
 					onChange={(v) => onChange(Number.isFinite(v) ? Math.round(v) : v)}
 					onBlurValue={(v) => {
 						if (Number.isFinite(v)) onChange(clamp(v));
 					}}
 				/>
-				<button type="button" className={btn} disabled={known && value >= max} onClick={() => onChange(known ? clamp(value + 1) : min)} aria-label={`More ${label}`}>
-					+
-				</button>
-			</div>
+			</Steppable>
 		</div>
 	);
 };
@@ -205,7 +293,7 @@ export const Stepper = ({
 export const Stat = ({ label, value }: { label: string; value: string }) => (
 	<div className="min-w-0 rounded-lg border border-gray-200 bg-white px-3 py-2 dark:border-slate-700 dark:bg-slate-900">
 		<div className="truncate font-mono text-[10px] uppercase tracking-[0.08em] text-gray-500 dark:text-slate-400">{label}</div>
-		<div className="truncate text-[15px] font-semibold tracking-tight tabular-nums">{value}</div>
+		<div className="truncate font-mono text-[16px] font-medium tabular-nums">{value}</div>
 	</div>
 );
 
@@ -224,9 +312,9 @@ export const Segmented = <T extends string>({
 	/** Tooltip for the whole control. */
 	title?: string;
 }) => (
-	<div className="flex flex-col gap-1.5" title={title}>
+	<div className="flex flex-col gap-2" title={title}>
 		{label ? <span className="text-[13px] font-medium text-gray-600 dark:text-slate-400">{label}</span> : null}
-		<div className="grid auto-cols-fr grid-flow-col gap-0.5 rounded-[11px] bg-gray-100 p-[3px] dark:bg-slate-800">
+		<div className="grid auto-cols-fr grid-flow-col gap-0.5 h-[var(--ctl)] rounded-[13px] bg-gray-100 p-[3px] dark:bg-slate-800">
 			{options.map((o) => (
 				<button
 					key={o.value}
@@ -234,9 +322,9 @@ export const Segmented = <T extends string>({
 					title={o.title}
 					aria-pressed={o.value === value}
 					onClick={() => onChange(o.value)}
-					className={`flex min-h-11 cursor-pointer select-none items-center justify-center gap-1.5 rounded-[9px] px-2 py-1 text-center text-sm leading-tight transition duration-200 active:scale-[0.97] ${
+					className={`flex h-[calc(var(--ctl)-6px)] cursor-pointer select-none items-center justify-center gap-1.5 rounded-[10px] px-2 text-center text-sm leading-tight transition duration-200 active:scale-[0.97] ${
 						o.value === value
-							? "bg-white font-semibold text-gray-900 shadow-[0_3px_8px_rgb(0_0_0/0.12),0_3px_1px_rgb(0_0_0/0.04)] dark:bg-slate-600 dark:text-white"
+							? "bg-paper font-semibold text-gray-900 shadow-[0_3px_8px_rgb(0_0_0/0.12),0_3px_1px_rgb(0_0_0/0.04)] dark:bg-slate-600 dark:text-white"
 							: "font-medium text-gray-500 hover:text-gray-900 dark:text-slate-400 dark:hover:text-slate-100"
 					}`}
 				>
@@ -403,7 +491,7 @@ export const Notices = ({ errors = [], warnings = [], info = [] }: { errors?: st
 		"pointer-events-auto rounded-2xl border border-gray-200 bg-white/90 text-[13px] text-gray-800 shadow-[0_8px_30px_rgb(0_0_0/0.12)] backdrop-blur-xl backdrop-saturate-150 dark:border-slate-700 dark:bg-slate-900/90 dark:text-slate-200 dark:shadow-[0_8px_30px_rgb(0_0_0/0.5)]";
 	if (!open)
 		return (
-			<button type="button" onClick={() => setOpen(true)} className={`${glass} flex min-h-11 cursor-pointer items-center gap-2 px-4 font-medium transition active:scale-[0.97]`} aria-label={`Show ${counts}`}>
+			<button type="button" onClick={() => setOpen(true)} className={`${glass} flex h-[var(--ctl)] cursor-pointer items-center gap-2 px-4 font-medium transition active:scale-[0.97]`} aria-label={`Show ${counts}`}>
 				{icon(kind)}
 				{counts}
 			</button>
@@ -438,6 +526,7 @@ export const BlankNumberField = ({
 	value,
 	onChange,
 	suffix,
+	step,
 	invalid = false,
 	hint,
 	placeholder = "required",
@@ -451,24 +540,27 @@ export const BlankNumberField = ({
 	invalid?: boolean;
 	hint?: string;
 	placeholder?: string;
-}) => (
-	<label className="flex flex-col gap-1.5">
-		<FieldLabel>{label}</FieldLabel>
-		<span className="relative block">
-			<NumInput
-				label={label}
-				value={value}
-				placeholder={placeholder}
-				invalid={invalid}
-				allowEmpty
-				className={suffix ? "pr-16" : ""}
-				onChange={(v) => onChange(Number.isNaN(v) ? null : v)}
-			/>
-			{suffix ? <Suffix>{suffix}</Suffix> : null}
-		</span>
-		{hint ? <span className="text-[13px] text-gray-500 dark:text-slate-400">{hint}</span> : null}
-	</label>
-);
+}) => {
+	const known = value !== null && Number.isFinite(value);
+	const st = typeof step === "number" ? step : known ? autoStep(value) : 1;
+	return (
+		<label className="flex flex-col gap-2">
+			<FieldLabel unit={suffix}>{label}</FieldLabel>
+			<Steppable label={label} canDec={known} canInc={known} onStep={(dir) => known && onChange(stepped(value, dir, st))}>
+				<NumInput
+					label={label}
+					value={value}
+					placeholder={placeholder}
+					invalid={invalid}
+					allowEmpty
+					style={padFor()}
+					onChange={(v) => onChange(Number.isNaN(v) ? null : v)}
+				/>
+			</Steppable>
+			{hint ? <span className="text-[13px] text-gray-500 dark:text-slate-400">{hint}</span> : null}
+		</label>
+	);
+};
 
 /** A button that opens the file chooser, with the chosen file's name beside it. */
 export const FilePicker = ({
@@ -483,7 +575,7 @@ export const FilePicker = ({
 	onFile: (file: File) => void;
 }) => (
 	<label className="flex cursor-pointer items-center gap-3">
-		<span className="flex h-11 shrink-0 items-center rounded-lg border border-gray-200 bg-white px-4 text-sm font-medium shadow-[0_1px_2px_rgb(0_0_0/0.04)] transition hover:border-gray-900 active:scale-95 dark:border-slate-700 dark:bg-slate-900 dark:hover:border-slate-300">
+		<span className="flex h-[var(--ctl)] shrink-0 items-center rounded-lg border border-gray-200 bg-paper px-4 text-sm font-medium shadow-[0_1px_2px_rgb(0_0_0/0.04)] transition hover:border-gray-900 active:scale-95 dark:border-slate-700 dark:bg-slate-900 dark:hover:border-slate-300">
 			{label}
 		</span>
 		<span className="min-w-0 truncate text-sm text-gray-500 dark:text-slate-400">{fileName ?? "No file chosen"}</span>
@@ -523,7 +615,7 @@ export const Hint = ({ children }: { children: ReactNode }) => (
 export const Summary = ({ rows }: { rows: [label: string, value: ReactNode][] }) => (
 	<dl className="m-0 divide-y divide-gray-200 overflow-hidden rounded-xl border border-gray-200 bg-white text-sm dark:divide-slate-700 dark:border-slate-700 dark:bg-slate-900">
 		{rows.map(([label, value]) => (
-			<div key={label} className="flex min-h-11 items-center justify-between gap-4 px-4 py-2">
+			<div key={label} className="flex min-h-12 items-center justify-between gap-4 px-4 py-2">
 				<dt className="text-gray-500 dark:text-slate-400">{label}</dt>
 				<dd className="m-0 text-right font-medium tabular-nums text-gray-900 dark:text-slate-100">{value}</dd>
 			</div>
