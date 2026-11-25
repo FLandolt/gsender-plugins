@@ -1,6 +1,0 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 140" role="img" aria-label="Pocket cleared in a spiral"><rect x="0.5" y="0.5" width="319" height="139" rx="12" fill="#0a0a0a" stroke="#262626"/>
-		<rect x="70" y="26" width="180" height="88" rx="8" fill="#0a0a0a" stroke="#ededed" stroke-width="1.5"/>
-		<rect x="88" y="40" width="144" height="60" rx="5" fill="none" stroke="#ededed" stroke-opacity=".5" stroke-width="1.2"/>
-		<rect x="108" y="52" width="104" height="36" rx="3" fill="none" stroke="#ededed" stroke-opacity=".5" stroke-width="1.2"/>
-		<rect x="128" y="62" width="64" height="16" rx="2" fill="none" stroke="#ededed" stroke-opacity=".5" stroke-width="1.2"/>
-		<circle cx="160" cy="70" r="3" fill="#ef4444"/></svg>
