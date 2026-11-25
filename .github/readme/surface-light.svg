@@ -1,0 +1,4 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 140" role="img" aria-label="Back-and-forth surfacing passes"><rect x="0.5" y="0.5" width="319" height="139" rx="12" fill="#fafafa" stroke="#eaeaea"/>
+		<rect x="70" y="26" width="180" height="88" fill="#ffffff" stroke="#0a0a0a" stroke-width="1.5"/>
+		<polyline points="52,114 268,114 268,92 52,92 52,70 268,70 268,48 52,48 52,26 268,26" fill="none" stroke="#0a0a0a" stroke-opacity=".55" stroke-width="1.4"/>
+		<circle cx="52" cy="114" r="3" fill="#ef4444"/></svg>

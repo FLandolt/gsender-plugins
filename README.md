@@ -1,32 +1,134 @@
+<div align="center">
+
+<a href="https://flandolt.github.io/gsender-plugins/"><picture>
+<source media="(prefers-color-scheme: dark)" srcset=".github/readme/logo-dark.svg">
+<img alt="" src=".github/readme/logo-light.svg" width="72" height="72">
+</picture></a>
+
 # Plugins for gSender
 
-Small, free plugins for [gSender](https://github.com/Sienci-Labs/gsender) that turn a few numbers into clean, GRBL-safe G-code, with a live 3D preview. No CAM software needed.
+**Small, free plugins that turn a few numbers into clean, GRBL-safe G-code, with a live 3D preview.**<br>
+No CAM software needed.
 
-**Website and live demos: <https://flandolt.github.io/gsender-plugins/>**
+<a href="https://flandolt.github.io/gsender-plugins/"><img alt="Open the website and live demos" src="https://img.shields.io/badge/Website_and_live_demos-open-0070f3?style=for-the-badge"></a>
+&nbsp;
+<a href="https://github.com/FLandolt/gsender-plugins/releases"><img alt="Latest releases" src="https://img.shields.io/badge/Download-all_releases-0a0a0a?style=for-the-badge"></a>
 
+<a href="https://github.com/FLandolt/gsender-plugins/actions/workflows/pages.yml"><img alt="Website deploy" src="https://img.shields.io/github/actions/workflow/status/FLandolt/gsender-plugins/pages.yml?label=website"></a>
+<a href="https://github.com/FLandolt/gsender-plugins/actions/workflows/auto-release.yml"><img alt="Auto release" src="https://img.shields.io/github/actions/workflow/status/FLandolt/gsender-plugins/auto-release.yml?label=auto-release"></a>
+<a href="https://github.com/Sienci-Labs/gsender"><img alt="Works with gSender 1.6.0 or newer" src="https://img.shields.io/badge/gSender-%E2%89%A5%201.6.0-d4602a"></a>
+<a href="https://github.com/gnea/grbl"><img alt="Writes G0 and G1 moves, plus G2 and G3 arcs where the shape has curves" src="https://img.shields.io/badge/GRBL-1.1-555555"></a>
+<a href="https://github.com/grblHAL/core"><img alt="Runs on grblHAL too" src="https://img.shields.io/badge/grblHAL-supported-555555"></a>
+<a href="https://nodejs.org/"><img alt="Built with Node.js 20 or newer" src="https://img.shields.io/badge/node-%E2%89%A5%2020-339933?logo=nodedotjs&logoColor=white"></a>
+<a href="https://github.com/FLandolt/gsender-plugins/issues"><img alt="Report a bug or ask for a feature" src="https://img.shields.io/github/issues/FLandolt/gsender-plugins?label=issues"></a>
+<a href="https://claude.com/claude-code"><img alt="Written with an AI coding assistant, directed and tested by a person" src="https://img.shields.io/badge/made_with-Claude_Code-d4602a"></a>
+
+[Plugins](#plugins) · [Install](#install) · [Develop](#develop) · [Releasing](#releasing) · [Support](#support)
+
+</div>
+
+> [!WARNING]
 > **Always check before you cut.** Look at the toolpath preview, run the job in the air first, and keep a hand on the stop button. You use these plugins at your own risk.
 
 ## Plugins
 
-| Plugin | What it does | Docs |
-|---|---|---|
-| **Hole Pattern** | Cuts one hole or a grid of holes. The bit spirals down level by level, with arcs or short chords. | [plugins/hole-pattern](plugins/hole-pattern) |
-| **Cutout** | Cuts a rectangle, a circle or the outline of a shape in a picture, inside or outside the line, with sharp or rounded corners and holding tabs. Zero at the centre or any corner. Use the same picture, size and zero as in Height Map to cut a carving free. | [plugins/cutout](plugins/cutout) |
-| **Pocket Cutout** | Clears a rectangular, round or picture-shaped pocket. The bit spirals down (no plunging), then clears in a spiral from the middle outwards, clockwise or counter-clockwise, with smooth lane changes between rings. Zero at the centre or any corner. | [plugins/pocket-cutout](plugins/pocket-cutout) |
-| **V-Carve** | Carves text, SVG shapes and pictures with a V-bit: deeper where the shape is wide, with sharp points at the corners. Refuses unsafe settings and says why. | [plugins/vcarve](plugins/vcarve) |
-| **Surfacing** | Faces a rectangular area. Choose the start corner and direction, how passes turn (outside or inside the material) whether they run back and forth or all the same way, and where to zero (any corner or the centre). | [plugins/surfacing](plugins/surfacing) |
-| **Height Map** | Carves a picture or height map (colour works too) into stepped levels, like a contour model. Choose the depth and how many steps down; the darkest parts go deepest (or the lightest, inverted). Each level is cleared in rings from the middle outwards, like a pocket (or with **Adaptive (Experimental)** clearing for an even load on the bit), and a top-down depth map shows what every spot will be cut to. | [plugins/heightmap](plugins/heightmap) |
+<table>
+<tr>
+<td width="50%" valign="top">
+
+<a href="plugins/hole-pattern"><picture>
+<source media="(prefers-color-scheme: dark)" srcset=".github/readme/holes-dark.svg">
+<img alt="Hole Pattern" src=".github/readme/holes-light.svg" width="100%">
+</picture></a>
+
+**[Hole Pattern](plugins/hole-pattern)**<br>
+One hole or a grid of holes. The bit spirals down level by level, with arcs or short chords.
+
+[Docs](plugins/hole-pattern) · [Live demo](https://flandolt.github.io/gsender-plugins/demos/hole-pattern/) · [Download](https://github.com/FLandolt/gsender-plugins/releases?q=hole-pattern-v&expanded=true)
+
+</td>
+<td width="50%" valign="top">
+
+<a href="plugins/cutout"><picture>
+<source media="(prefers-color-scheme: dark)" srcset=".github/readme/rect-dark.svg">
+<img alt="Cutout" src=".github/readme/rect-light.svg" width="100%">
+</picture></a>
+
+**[Cutout](plugins/cutout)**<br>
+Cut a rectangle, a circle or the outline of a picture, inside or outside the line, with rounded corners and holding tabs.
+
+[Docs](plugins/cutout) · [Live demo](https://flandolt.github.io/gsender-plugins/demos/cutout/) · [Download](https://github.com/FLandolt/gsender-plugins/releases?q=cutout-v&expanded=true)
+
+</td>
+</tr>
+<tr>
+<td width="50%" valign="top">
+
+<a href="plugins/pocket-cutout"><picture>
+<source media="(prefers-color-scheme: dark)" srcset=".github/readme/pocket-dark.svg">
+<img alt="Pocket Cutout" src=".github/readme/pocket-light.svg" width="100%">
+</picture></a>
+
+**[Pocket Cutout](plugins/pocket-cutout)**<br>
+Clear a rectangular, round or picture-shaped pocket in a spiral from the middle outwards, with no plunging.
+
+[Docs](plugins/pocket-cutout) · [Live demo](https://flandolt.github.io/gsender-plugins/demos/pocket-cutout/) · [Download](https://github.com/FLandolt/gsender-plugins/releases?q=pocket-cutout-v&expanded=true)
+
+</td>
+<td width="50%" valign="top">
+
+<a href="plugins/vcarve"><picture>
+<source media="(prefers-color-scheme: dark)" srcset=".github/readme/vcarve-dark.svg">
+<img alt="V-Carve" src=".github/readme/vcarve-light.svg" width="100%">
+</picture></a>
+
+**[V-Carve](plugins/vcarve)**<br>
+Carve text, SVG shapes and pictures with a V-bit: deep where the shape is wide, sharp at the corners.
+
+[Docs](plugins/vcarve) · [Live demo](https://flandolt.github.io/gsender-plugins/demos/vcarve/) · [Download](https://github.com/FLandolt/gsender-plugins/releases?q=vcarve-v&expanded=true)
+
+</td>
+</tr>
+<tr>
+<td width="50%" valign="top">
+
+<a href="plugins/surfacing"><picture>
+<source media="(prefers-color-scheme: dark)" srcset=".github/readme/surface-dark.svg">
+<img alt="Surfacing" src=".github/readme/surface-light.svg" width="100%">
+</picture></a>
+
+**[Surfacing](plugins/surfacing)**<br>
+Face a rectangular area. Choose the start corner, direction and how the passes turn.
+
+[Docs](plugins/surfacing) · [Live demo](https://flandolt.github.io/gsender-plugins/demos/surfacing/) · [Download](https://github.com/FLandolt/gsender-plugins/releases?q=surfacing-v&expanded=true)
+
+</td>
+<td width="50%" valign="top">
+
+<a href="plugins/heightmap"><picture>
+<source media="(prefers-color-scheme: dark)" srcset=".github/readme/heightmap-dark.svg">
+<img alt="Height Map" src=".github/readme/heightmap-light.svg" width="100%">
+</picture></a>
+
+**[Height Map](plugins/heightmap)**<br>
+Carve a picture or height map into stepped levels, like a contour model: dark goes deep, light stays on top.
+
+[Docs](plugins/heightmap) · [Live demo](https://flandolt.github.io/gsender-plugins/demos/heightmap/) · [Download](https://github.com/FLandolt/gsender-plugins/releases?q=heightmap-v&expanded=true)
+
+</td>
+</tr>
+</table>
 
 All plugins:
 
 - Write `G0`/`G1` moves and, where the shape has circles or rounded corners, by default `G2`/`G3` arcs (V-Carve and Height Map write straight moves only) (smaller files, smoother motion). Pick **Lines (G1)** under *More options* to get short `G1` chords instead. No canned cycles and no cutter compensation, so the output runs on GRBL 1.1 and grblHAL.
 - Show a 3D toolpath preview using gSender's own viewer, with the bit drawn at your tool diameter. Switch the preview to **Material** to run the viewer's cut simulation and see what is left of a block of stock, so any uncut area stands out.
-- Walk you through the settings in steps (tap a step's tab to jump straight to it, or use Back / Next). A red dot marks a step that still needs something, and the last step sums up the job before you load it.
+- Walk you through the settings in steps: tap a step's tab to jump straight to it. A red dot marks a step that still needs something, and the last step sums up the job before you load it.
 - Keep the preview on screen all the time: beside the settings on a landscape screen, below them on a portrait (9:16) or narrow one. Only the settings scroll.
 - Draw what the numbers mean as you type them: the bit in its cut seen from the side (diameter, depth, one line per pass, safe Z), the stepover seen from above, and the holding tabs.
 - Are made for touch screens: big buttons and sliders, and tapping a number box selects it so you can type over it. A box can be cleared completely before typing a new value (a comma works as the decimal mark too).
 - Won't generate or load anything while a box is empty or a needed value is 0. The depth starts at 0 on purpose, so you always enter it for your stock; the bit starts at 4 mm.
-- Keep Back / Next, G-code and Load to gSender in the top bar. Problems and warnings float in a card over the corner of the preview, so nothing moves when they appear; fold it to a small pill with ×, and it opens again when the messages change.
+- Keep the figures (size, levels or passes, estimated time), G-code and Load to gSender in one bar under the preview. Both panels keep their size, and problems and warnings float in a card over the corner of the preview, so nothing moves when they appear; fold it to a small pill with ×, and it opens again when the messages change.
 - Offer **Slow**, **Medium** and **High** speed presets, or your own feed, plunge, spindle and stepdown values.
 - Work in millimetres or inches.
 - Load the program straight into gSender with **Load to gSender**.
