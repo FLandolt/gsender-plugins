@@ -17,7 +17,6 @@
 <a href="https://github.com/Sienci-Labs/gsender"><img alt="gSender 1.6.0 or newer" src="https://img.shields.io/badge/gSender-%E2%89%A5%201.6.0-d4602a"></a>
 <a href="https://nodejs.org/"><img alt="Node.js 20 or newer" src="https://img.shields.io/badge/node-%E2%89%A5%2020-339933?logo=nodedotjs&logoColor=white"></a>
 <a href="https://github.com/FLandolt/gsender-plugins/issues"><img alt="Open issues" src="https://img.shields.io/github/issues/FLandolt/gsender-plugins?label=issues"></a>
-<a href="https://claude.com/claude-code"><img alt="Made with Claude Code" src="https://img.shields.io/badge/made_with-Claude_Code-d4602a"></a>
 
 [Layout](#repository-layout) · [Develop](#develop) · [How a plugin is built](#how-a-plugin-is-built) · [Design system](#design-system) · [Add a plugin](#add-a-plugin) · [Releasing](#releasing)
 
