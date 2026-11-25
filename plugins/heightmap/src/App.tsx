@@ -210,12 +210,12 @@ const App = () => {
 						onChange={(strategy) => update({ strategy })}
 						options={[
 							{ value: "rings", label: "Rings" },
-							{ value: "adaptive", label: "Adaptive" },
+							{ value: "adaptive", label: "Adaptive (Experimental)" },
 						]}
 					/>
 					<Hint>
 						{params.strategy === "adaptive"
-							? "Adaptive spreads out from the middle of each area like a ripple, in smooth arcs one stepover apart, so the bit takes about the same amount all the way: no full-width cuts, no spikes in corners. With an even load you can try a smaller stepover and a deeper stepdown."
+							? "Experimental: not finished yet, so check the preview and air-cut first. Adaptive spreads out from the middle of each area like a ripple, in smooth arcs one stepover apart, so the bit takes about the same amount all the way: no full-width cuts, no spikes in corners. With an even load you can try a smaller stepover and a deeper stepdown."
 							: "Rings cut from the middle of each area outwards, one stepover apart, ending on the wall: the shortest path."}
 					</Hint>
 					{params.strategy === "adaptive" && (
@@ -278,7 +278,7 @@ const App = () => {
 							["Size", size ? `${lengthLabel(size.width, units)} × ${lengthLabel(size.height, units)}` : "–"],
 							["Levels", params.depth > 0 ? depths.map((d, k) => (k === 0 ? "top" : `−${lengthLabel(d, units)}`)).join(" / ") : "–"],
 							["Bit", `Ø ${lengthLabel(params.toolDiameter, units)}, stepover ${Number.isFinite(params.stepover) ? Math.round(params.stepover * 100) : "–"}%`],
-							["Clearing", params.strategy === "adaptive" ? "Adaptive (even load)" : "Rings, inside out"],
+							["Clearing", params.strategy === "adaptive" ? "Adaptive (Experimental, even load)" : "Rings, inside out"],
 							["Passes", passes ? `${passes} (at most ${lengthLabel(params.stepdown, units)} each)` : "–"],
 							["Zero", POSITION_NAMES[params.origin]],
 							["Feed / plunge", `${shown(params.feedrate)} / ${shown(params.plungeRate)} ${units}/min`],

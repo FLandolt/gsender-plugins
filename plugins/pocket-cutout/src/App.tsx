@@ -209,12 +209,12 @@ const App = () => {
 						onChange={(strategy) => update({ strategy })}
 						options={[
 							{ value: "rings", label: "Rings" },
-							{ value: "adaptive", label: "Adaptive" },
+							{ value: "adaptive", label: "Adaptive (Experimental)" },
 						]}
 					/>
 					<Hint>
 						{params.strategy === "adaptive"
-							? "Adaptive spreads out from the middle of each area like a ripple, in smooth arcs one stepover apart, so the bit takes about the same amount all the way: no full-width cuts, no spikes in corners. With an even load you can try a smaller stepover and a deeper stepdown."
+							? "Experimental: not finished yet, so check the preview and air-cut first. Adaptive spreads out from the middle of each area like a ripple, in smooth arcs one stepover apart, so the bit takes about the same amount all the way: no full-width cuts, no spikes in corners. With an even load you can try a smaller stepover and a deeper stepdown."
 							: "Rings cut from the middle of each area outwards, one stepover apart, ending on the wall: the shortest path."}
 					</Hint>
 					{params.strategy === "adaptive" && (
@@ -289,7 +289,7 @@ const App = () => {
 							["Pocket", isPicture ? (picture?.name ?? "Picture") : round ? `Circle Ø ${lengthLabel(params.diameter, units)}` : `${lengthLabel(params.width, units)} × ${lengthLabel(params.height, units)}${params.cornerRadius > 0 ? `, r ${lengthLabel(params.cornerRadius, units)}` : ""}`],
 							["Bit", `Ø ${lengthLabel(params.toolDiameter, units)}`],
 							["Depth", `${lengthLabel(params.depth, units)}${passes ? ` in ${passes} levels` : ""}`],
-							isPicture ? ["Clearing", `${params.strategy === "adaptive" ? "Adaptive (even load)" : "Rings, inside out"}, stepover ${Math.round(params.stepover * 100)}%`] : ["Spiral", `${params.rotation === "cw" ? "Clockwise" : "Counter-clockwise"}, stepover ${Math.round(params.stepover * 100)}%`],
+							isPicture ? ["Clearing", `${params.strategy === "adaptive" ? "Adaptive (Experimental, even load)" : "Rings, inside out"}, stepover ${Math.round(params.stepover * 100)}%`] : ["Spiral", `${params.rotation === "cw" ? "Clockwise" : "Counter-clockwise"}, stepover ${Math.round(params.stepover * 100)}%`],
 							["Zero", POSITION_NAMES[params.origin]],
 							["Feed / plunge", `${shown(params.feedrate)} / ${shown(params.plungeRate)} ${units}/min`],
 							["Spindle", `${params.spindleRpm} RPM`],
